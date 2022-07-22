@@ -112,7 +112,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             }
             return preg_match($regexp, trim($string));
         } else if ($matchtype == '1') {
-            //match
+            //matchall
             $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
 	    $pattern = preg_replace('/[^A-Za-z0-9]/', '', $pattern);
             if ($ignorecase) {
@@ -129,7 +129,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
                     return false;
             }
         } else if ($matchtype =='2') {
-            //matchan
+            //matchany
             if ($ignorecase) {
                     $string = strtolower($string);
                     $pattern = strtolower($pattern);
