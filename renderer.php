@@ -112,7 +112,8 @@ class qtype_mojomatch_renderer extends qtype_renderer {
     }
 
     public function correct_response(question_attempt $qa) {
-	    $question = $qa->get_question();
+	echo "state " . $qa->get_state();
+	$question = $qa->get_question();
         $answer = $question->get_matching_answer($question->get_correct_response());
         if (!$answer) {
             return '';

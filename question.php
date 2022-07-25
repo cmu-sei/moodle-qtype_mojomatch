@@ -85,7 +85,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     public function get_answers() {
         return $this->answers;
     }
-/*
+
     private function setup() {
         $client = new curl;
         $x_api_key = get_config('topomojo', 'apikey');
@@ -94,12 +94,12 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 	//debugging("api key $x_api_key", DEBUG_DEVELOPER);
         return $client;
     }
-*/
+
     public function compare_response_with_answer(array $response, question_answer $answer) {
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
             return false;
         }
-/*
+
 	if ($this->transforms) {
 		echo "<br>using transforms for answer $answer->answer<br>";
 		// TODO dont even come here when previewing a question
@@ -124,7 +124,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 		        foreach ($section->questions as $question) {
 			    if ($question->text == $this->questiontext) {
 				$answer->answer = $question->answer;
-				// TODO update quba with the correct answer
+				// view.php in mod_topopmojo should be updating the qa record
 				break;
 			    }
 		        }
@@ -135,14 +135,13 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 		}
 		echo "the correct answer is: $question->answer<br>";
         }
-*/
+
         return self::compare_string_with_matchtype(
                 $response['answer'], $answer->answer, !$this->usecase, $this->matchtype);
     }
 
     public static function compare_string_with_matchtype($string, $pattern, $ignorecase, $matchtype) {
-
-        // Normalise any non-canonical UTF-8 characters before we start.
+	    echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
         $pattern = self::safe_normalize($pattern);
         $string = self::safe_normalize($string);
 
@@ -198,7 +197,9 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             // Make the match insensitive if requested to.
             if ($ignorecase) {
                 $regexp .= 'i';
-            }
+	    }
+	    echo "regexp $regexp<br>";
+		    echo "string $string<br>";
             return preg_match($regexp, trim($string));
         }
     }
