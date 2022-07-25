@@ -1,6 +1,6 @@
-﻿# MojoMatch question type plugin for Moodle
+﻿MojoMatch question type plugin for Moodle
 
-This question type provides additional matching options for a short answer question. The new question type is an extension of the SHORTANSWER type. It can be used on its own and can also be used in connjuction with the Moodle activity plugin for Topomojo labs, mod_topomjo. The Topomojo activity will automatically create questions of this type when the lab contains challenge questions.
+This question type provides additional matching options for a short answer question. The new question type is an extension of the SHORTANSWER type. It can be used on its own and can also be used in conxnjuction with the Moodle activity plugin for Topomojo labs, mod_topomjo.
 
 ## Matching Options
 ### Match

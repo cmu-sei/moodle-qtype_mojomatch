@@ -53,4 +53,7 @@ $string['match'] = 'Match will perform an exact match of the answer string simil
 $string['matchalpha'] = 'MatchAlpha will strip all characters other than alphabetic characters.';
 $string['matchany'] = 'MatchAny will check the response to a contain the answer as a substring.';
 $string['matchall'] = 'MatchAll will check a list of words to match the correct list of words.';
+$string['variant'] = 'The variant of the lab that the question belongs to.';
+$string['workspaceid'] = 'The ID of the topomojo workspace; used to find the running gamespace.';
+$string['transforms'] = 'Whether the lab uses transforms to generate the answer during runtime.';
 

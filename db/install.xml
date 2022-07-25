@@ -10,6 +10,9 @@
         <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Foreign key references question.id."/>
         <FIELD NAME="usecase" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether answers are matched case-sensitively."/>
         <FIELD NAME="matchtype" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Match type for answer."/>
+	<FIELD NAME="variant" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="The variant of the topomojo lab that this question belongs to."/>
+	<FIELD NAME="workspaceid" TYPE="text" LENGTH="255" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="The ID of the topomojo workspace; used to find the running gamespace."/>
+        <FIELD NAME="transforms" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether the lab uses transforms to generate the answer during runtime."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

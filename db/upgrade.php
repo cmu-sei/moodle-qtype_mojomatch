@@ -30,22 +30,57 @@ defined('MOODLE_INTERNAL') || die();
  * @param int $oldversion the version we are upgrading from.
  */
 function xmldb_qtype_mojomatch_upgrade($oldversion) {
-    global $CFG;
+    global $CFG, $DB;
+    $dbman = $DB->get_manager();
 
-    // Automatically generated Moodle v3.6.0 release upgrade line.
-    // Put any upgrade step following this.
+    if ($oldversion < 2022072201) {
 
-    // Automatically generated Moodle v3.7.0 release upgrade line.
-    // Put any upgrade step following this.
+        // Define field variant to be added to qtype_mojomatch_options.
+        $table = new xmldb_table('qtype_mojomatch_options');
+        $field = new xmldb_field('variant', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '1', 'matchtype');
 
-    // Automatically generated Moodle v3.8.0 release upgrade line.
-    // Put any upgrade step following this.
+        // Conditionally launch add field variant.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
 
-    // Automatically generated Moodle v3.9.0 release upgrade line.
-    // Put any upgrade step following this.
+        // Mojomatch savepoint reached.
+        upgrade_plugin_savepoint(true, 2022072201, 'qtype', 'mojomatch');
+    }
+    if ($oldversion < 2022072202) {
 
-    // Automatically generated Moodle v4.0.0 release upgrade line.
-    // Put any upgrade step following this.
+        // Define field workspaceid to be added to qtype_mojomatch_options.
+        $table = new xmldb_table('qtype_mojomatch_options');
+        $field = new xmldb_field('workspaceid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '', 'variant');
+
+        // Conditionally launch add field workspaceid.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        // Define field transforms to be added to qtype_mojomatch_options.
+        $table = new xmldb_table('qtype_mojomatch_options');
+        $field = new xmldb_field('transforms', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'workspaceid');
+
+        // Conditionally launch add field transforms.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Mojomatch savepoint reached.
+        upgrade_plugin_savepoint(true, 2022072202, 'qtype', 'mojomatch');
+    }
+    if ($oldversion < 2022072203) {
+
+        // Changing type of field workspaceid on table qtype_mojomatch_options to int.
+        $table = new xmldb_table('qtype_mojomatch_options');
+        $field = new xmldb_field('workspaceid', XMLDB_TYPE_TEXT, '255', null, XMLDB_NOTNULL, null, '', 'variant');
+
+        // Launch change of type for field workspaceid.
+        $dbman->change_field_type($table, $field);
+
+        // Mojomatch savepoint reached.
+        upgrade_plugin_savepoint(true, 2022072203, 'qtype', 'mojomatch');
+    }
 
     return true;
 }

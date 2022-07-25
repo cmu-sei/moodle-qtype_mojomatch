@@ -86,9 +86,53 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return $this->answers;
     }
 
+    private function setup() {
+        $client = new curl;
+        $x_api_key = get_config('topomojo', 'apikey');
+        $topoHeaders = array( 'x-api-key: ' . $x_api_key, 'content-type: application/json' );
+        $client->setHeader($topoHeaders);
+	//debugging("api key $x_api_key", DEBUG_DEVELOPER);
+        return $client;
+    }
+
     public function compare_response_with_answer(array $response, question_answer $answer) {
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
             return false;
+        }
+        if ($this->transforms) {
+		echo "<br>using transforms for answer $answer->answer<br>";
+		// TODO dont even come here when previewing a question
+		// TODO set feedback to indicate as such
+                $x_api_key = get_config('qtype_topomojo', 'api_key');
+                $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
+		global $CFG;
+		require_once("$CFG->dirroot/mod/topomojo/locallib.php");
+
+		$client = $this->setup();
+		// get gamespace
+		$name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
+		$name = "A King's Ransom";
+		$all_events = list_events($client, $name);
+		$moodle_events = moodle_events($all_events);
+		$history = user_events($client, $moodle_events);
+		$gamespace = get_active_event($history);
+
+		if ($gamespace) {
+		    $challenge = get_gamespace_challenge($client, $gamespace->id);
+		    foreach ($challenge->challenge->sections as $section) {
+		        foreach ($section->questions as $question) {
+			    if ($question->text == $this->questiontext) {
+				$answer->answer = $question->answer;
+				// TODO update quba with the correct answer
+				break;
+			    }
+		        }
+		    }
+		} else {
+		    echo "we must be in a preview<br>";
+		    return true;
+		}
+		echo "the correct answer is: $question->answer<br>";
         }
 
         return self::compare_string_with_matchtype(
