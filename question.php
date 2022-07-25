@@ -85,7 +85,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     public function get_answers() {
         return $this->answers;
     }
-
+/*
     private function setup() {
         $client = new curl;
         $x_api_key = get_config('topomojo', 'apikey');
@@ -94,7 +94,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 	//debugging("api key $x_api_key", DEBUG_DEVELOPER);
         return $client;
     }
-
+*/
     public function compare_response_with_answer(array $response, question_answer $answer) {
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
             return false;
