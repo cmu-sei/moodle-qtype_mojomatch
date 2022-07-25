@@ -36,7 +36,6 @@ defined('MOODLE_INTERNAL') || die();
 class qtype_mojomatch_renderer extends qtype_renderer {
     public function formulation_and_controls(question_attempt $qa,
             question_display_options $options) {
-
         $question = $qa->get_question();
         $currentanswer = $qa->get_last_qt_var('answer');
 
@@ -96,14 +95,13 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             $result .= html_writer::nonempty_tag('div',
                     $question->get_validation_error(array('answer' => $currentanswer)),
                     array('class' => 'validationerror'));
-        }
+	}
 
         return $result;
     }
 
     public function specific_feedback(question_attempt $qa) {
         $question = $qa->get_question();
-
         $answer = $question->get_matching_answer(array('answer' => $qa->get_last_qt_var('answer')));
         if (!$answer || !$answer->feedback) {
             return '';
@@ -114,14 +112,12 @@ class qtype_mojomatch_renderer extends qtype_renderer {
     }
 
     public function correct_response(question_attempt $qa) {
-        $question = $qa->get_question();
-
+	    $question = $qa->get_question();
         $answer = $question->get_matching_answer($question->get_correct_response());
         if (!$answer) {
             return '';
         }
-
         return get_string('correctansweris', 'qtype_mojomatch',
-                s($question->clean_response($answer->answer)));
+                s($question->clean_response($qa->get_right_answer_summary())));
     }
 }

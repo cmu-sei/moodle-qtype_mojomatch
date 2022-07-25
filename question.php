@@ -99,7 +99,8 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
             return false;
         }
-        if ($this->transforms) {
+/*
+	if ($this->transforms) {
 		echo "<br>using transforms for answer $answer->answer<br>";
 		// TODO dont even come here when previewing a question
 		// TODO set feedback to indicate as such
@@ -134,7 +135,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 		}
 		echo "the correct answer is: $question->answer<br>";
         }
-
+*/
         return self::compare_string_with_matchtype(
                 $response['answer'], $answer->answer, !$this->usecase, $this->matchtype);
     }
