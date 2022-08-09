@@ -30,7 +30,8 @@ $plugin->version   = 2022072203;
 
 // This is a list of plugins, this plugin depends on (and their versions).
 $plugin->dependencies = [
-        'mod_topomojo' => 2022072200,
+    'qbehaviour_mojomatch' => 2022072200,
+    'mod_topomojo'         => 2022072200,
 ];
 
 $plugin->requires  = 2022041200;

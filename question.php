@@ -42,7 +42,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     public $answers = array();
 
     public function __construct() {
-        parent::__construct(new question_first_matching_answer_grading_strategy($this));
+        parent::__construct(new mojomatch_grading_strategy($this));
     }
 
     public function get_expected_data() {
@@ -91,60 +91,97 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         $x_api_key = get_config('topomojo', 'apikey');
         $topoHeaders = array( 'x-api-key: ' . $x_api_key, 'content-type: application/json' );
         $client->setHeader($topoHeaders);
-	//debugging("api key $x_api_key", DEBUG_DEVELOPER);
+        //debugging("api key $x_api_key", DEBUG_DEVELOPER);
         return $client;
     }
 
     public function compare_response_with_answer(array $response, question_answer $answer) {
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
             return false;
-        }
+	}
+	echo "comparing response " . $response['answer'] . " to $answer->answer<br>";
+	$preview = 0;
+	$viewattempt = 0;
+        global $PAGE;
+        if ($PAGE->pagetype == 'question-bank-previewquestion-preview') {
+            echo "lets not talk to topomojo<br>";
+            echo "lets do a difference comparision<br>";
+	    $preview = 1;
+        } else if ($PAGE->pagetype == 'mod-topomojo-viewattempt') {
+            echo "lets not talk to topomojo<br>";
+            echo "this was already graded but how can i look that up from here...<br>";
+	    //$qa->get_last_qt_var('answer');
+	    echo "the correct answer is: $answer->answer<br>";
+ 	    $viewattempt = 1;           
+	    echo "but the correct answer for the actual live attempt is ____<br>";
+	} else if ($this->transforms) {
+            echo "<br>using transforms for answer $answer->answer<br>";
+            // TODO dont even come here when previewing a question
+            // TODO set feedback to indicate as such
+            $x_api_key = get_config('qtype_topomojo', 'api_key');
+            $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
+            global $CFG;
+            require_once("$CFG->dirroot/mod/topomojo/locallib.php");
 
-	if ($this->transforms) {
-		echo "<br>using transforms for answer $answer->answer<br>";
-		// TODO dont even come here when previewing a question
-		// TODO set feedback to indicate as such
-                $x_api_key = get_config('qtype_topomojo', 'api_key');
-                $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
-		global $CFG;
-		require_once("$CFG->dirroot/mod/topomojo/locallib.php");
-
-		$client = $this->setup();
-		// get gamespace
-		$name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
-		$name = "A King's Ransom";
-		$all_events = list_events($client, $name);
-		$moodle_events = moodle_events($all_events);
-		$history = user_events($client, $moodle_events);
-		$gamespace = get_active_event($history);
-
-		if ($gamespace) {
-		    $challenge = get_gamespace_challenge($client, $gamespace->id);
-		    foreach ($challenge->challenge->sections as $section) {
-		        foreach ($section->questions as $question) {
-			    if ($question->text == $this->questiontext) {
+            $client = $this->setup();
+            // get gamespace
+	    $name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
+	    echo "name to check is $name but we are hardcoded at present<br>";
+            //$name = "A King's Ransom";
+            $all_events = list_events($client, $name);
+            $moodle_events = moodle_events($all_events);
+            $history = user_events($client, $moodle_events);
+            $gamespace = get_active_event($history);
+/*
+            if ($gamespace) {
+                $challenge = get_gamespace_challenge($client, $gamespace->id);
+                foreach ($challenge->challenge->sections as $section) {
+                    foreach ($section->questions as $question) {
+                        if ($question->text == $this->questiontext) {
 				$answer->answer = $question->answer;
-				// view.php in mod_topopmojo should be updating the qa record
-				break;
-			    }
-		        }
+				echo "answer pulled from gamespace<br>";
+                            // view.php in mod_topopmojo is now updating the qa record via direct db mod
+                            break;
+                        }
 		    }
-		} else {
-		    echo "we must be in a preview<br>";
-		    return true;
 		}
-		echo "the correct answer is: $question->answer<br>";
-        }
+            } else {
+                print_error("we cannot talk to a running topomojo lab");
+	    }
+ */
+	}
+
+   	echo "the correct answer is: $answer->answer<br>";
 
         return self::compare_string_with_matchtype(
-                $response['answer'], $answer->answer, !$this->usecase, $this->matchtype);
+                $response['answer'], $answer->answer, !$this->usecase, $this->matchtype, $preview, $viewattempt, $this->transforms);
     }
 
-    public static function compare_string_with_matchtype($string, $pattern, $ignorecase, $matchtype) {
-	    echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
+    public static function compare_string_with_matchtype($string, $pattern, $ignorecase, $matchtype, $preview, $viewattempt, $transforms) {
+        echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
         $pattern = self::safe_normalize($pattern);
         $string = self::safe_normalize($string);
+	echo "string $string<br>";
+        echo "pattern $pattern<br>";
+	if ($transforms && $preview) {
+		echo "lets strip the transform tag and then compare<br>";
+		$regexp = "/##[a-zA-Z0-9]*##/";
+                echo "regexp<br>";
+		echo "$regexp<br>";
 
+		$string = preg_replace($regexp, '', $string);
+		echo "$string<br>";
+		$pattern = preg_replace($regexp, '', $pattern);
+		echo "$pattern<br>";
+		if (str_contains($string, $pattern)) {
+			echo "match<br>";
+			$string = $pattern;
+		}
+    	}
+	if  ($viewattempt == 1) {
+		echo "how can compare during view attempt<br>";
+		echo "we shouldnt even be here if its already been graded<br>";
+	}
         if ($matchtype == '0') {
             //matchalpha
             $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
@@ -158,29 +195,29 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         } else if ($matchtype == '1') {
             //match
             $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
-	    $pattern = preg_replace('/[^A-Za-z0-9]/', '', $pattern);
+            $pattern = preg_replace('/[^A-Za-z0-9]/', '', $pattern);
             if ($ignorecase) {
                     $string = strtolower($string);
                     $pattern = strtolower($pattern);
             }
-	    $regexp = '/[ ,;:|]/';
+            $regexp = '/[ ,;:|]/';
             $answer = preg_split($regexp, $string);
-	    $response = preg_split($regexp, $pattern);
-	    $intersection = array_intersect($answer, $response);
+            $response = preg_split($regexp, $pattern);
+            $intersection = array_intersect($answer, $response);
             if (count($intersection) == count($answer)) {
                     return true;
             } else {
                     return false;
             }
         } else if ($matchtype =='2') {
-            //matchan
+            //matchany
             if ($ignorecase) {
                     $string = strtolower($string);
                     $pattern = strtolower($pattern);
             }
             return str_contains($pattern, $string);
         } else if ($matchtype == '3') {
-           //match
+            //match
 
             // Break the string on non-escaped runs of asterisks.
             // ** is equivalent to *, but people were doing that, and with many *s it breaks preg.
@@ -197,9 +234,9 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             // Make the match insensitive if requested to.
             if ($ignorecase) {
                 $regexp .= 'i';
-	    }
-	    echo "regexp $regexp<br>";
-		    echo "string $string<br>";
+            }
+            echo "regexp $regexp<br>";
+            echo "string $string<br>";
             return preg_match($regexp, trim($string));
         }
     }
@@ -280,4 +317,159 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         // No need to return anything, external clients do not need additional information for rendering this question type.
         return null;
     }
+
+    // We need mojomatch
+    public function make_behaviour(question_attempt $qa, $preferredbehaviour) {
+        global $CFG;
+
+        if (file_exists($CFG->dirroot.'/question/behaviour/mojomatch/')) {
+             question_engine::load_behaviour_class('mojomatch');
+             return new qbehaviour_mojomatch($qa, $preferredbehaviour);
+        }
+
+        return parent::make_behaviour($qa, $preferredbehaviour);
+    }
+
+    public function get_right_answer_summary() {
+	echo "question get_right_answer_summary<br>";
+        $answer = parent::get_right_answer_summary();
+        
+            // parent calls
+    /*
+            $correctresponse = $this->get_correct_response();
+        if (empty($correctresponse)) {
+            return null;
+        }
+        return $this->summarise_response($correctresponse);
+     */
+    //whcih calls
+    //        $answer = $this->get_correct_answer();
+    //        whcih calls
+    //                return $this->gradingstrategy->get_correct_answer();
+
+        return $answer;
+    }
+
+    public function get_rightanswer_topomojo(question_attempt $qa) {
+
+	    echo "get_rightanswer_topomojo<br>";
+        if ($this->transforms) {
+            echo "<br>using transforms for answer <br>";
+            // TODO dont even come here when previewing a question
+            // TODO set feedback to indicate as such
+            $x_api_key = get_config('qtype_topomojo', 'api_key');
+            $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
+            global $CFG;
+            require_once("$CFG->dirroot/mod/topomojo/locallib.php");
+
+            $client = $this->setup();
+            // get gamespace
+            $name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
+            echo "name to check is $name but we are hardcoded at present<br>";
+            //$name = "A King's Ransom";
+            $all_events = list_events($client, $name);
+            $moodle_events = moodle_events($all_events);
+            $history = user_events($client, $moodle_events);
+            $gamespace = get_active_event($history);
+
+            if ($gamespace) {
+                $challenge = get_gamespace_challenge($client, $gamespace->id);
+                foreach ($challenge->challenge->sections as $section) {
+                    foreach ($section->questions as $question) {
+                        if ($question->text == $this->questiontext) {
+                            $answer= $question->answer;
+                            echo "answer pulled from gamespace<br>";
+                            // view.php in mod_topopmojo is now updating the qa record via direct db mod
+                            break;
+                        }
+                    }
+                }
+            } else {
+                print_error("we cannot talk to a running topomojo lab");
+            }
+	    echo "answer in topomojo is $answer<br>";
+	    return $answer;
+        }
+
+    }
+
+    public function grade_attempt(array $response, question_answer $rightanswer) {
+        echo "we are inside of grade_attempt<br>";
+            if ($this->compare_response_with_answer($response, $rightanswer)) {
+                //$answer->id = $aid;
+                return $rightanswer;
+            }
+        return null;
+    }
+
+    public function grade_response_qa(array $response, question_attempt $qa) {
+        echo "grade_response_qa<br>";    
+	    $answers = $this->get_answers();
+        if (count($answers) == 1) {
+            $rightanswer = reset($answers);
+            $rightanswer->answer = $qa->get_right_answer_summary();
+        } else {
+           echo  "cannot handle more than one answer<br>";
+        }
+
+        $answer = $this->grade_attempt($response, $rightanswer);
+        if ($answer) {
+            return array($answer->fraction,
+                    question_state::graded_state_for_fraction($answer->fraction));
+        } else {
+            return array(0, question_state::$gradedwrong);
+        }
+    }
+
 }
+
+class mojomatch_grading_strategy extends question_first_matching_answer_grading_strategy {
+    /**
+     * @var question_response_answer_comparer (presumably also a
+     * {@link question_definition}) the question we are doing the grading for.
+     */
+    protected $question;
+
+    /**
+     * @param question_response_answer_comparer $question (presumably also a
+     * {@link question_definition}) the question we are doing the grading for.
+     */
+    public function __construct(question_response_answer_comparer $question) {
+        $this->question = $question;
+    }
+
+    public function grade(array $response) {
+        echo "we are inside of grade<br>";
+	global $PAGE;
+	//if ($PAGE->pagetype == 'mod-topomojo-viewattempt') {
+	//	//TODO maybe dont return here
+	//	return null;
+	//}
+	print_r($this);
+		
+        foreach ($this->question->get_answers() as $aid => $answer) {
+            if ($this->question->compare_response_with_answer($response, $answer)) {
+                $answer->id = $aid;
+                return $answer;
+            }
+        }
+        return null;
+    }
+
+
+    public function get_correct_answer() {
+	    echo "get_correct_answer<Br>";
+
+	    echo "we should talk to topo here because we are starting the attempt<Br>";
+	foreach ($this->question->get_answers() as $answer) {
+		print_r($answer);
+		$state = question_state::graded_state_for_fraction($answer->fraction);
+		echo "state $state<br>";
+            if ($state == question_state::$gradedright) {
+                return $answer;
+            }
+        }
+        return null;
+    }
+}
+
