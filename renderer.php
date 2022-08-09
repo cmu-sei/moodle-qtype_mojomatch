@@ -50,35 +50,28 @@ class qtype_mojomatch_renderer extends qtype_renderer {
 
         if ($options->readonly) {
             $inputattributes['readonly'] = 'readonly';
-	}
-	$answers = $question->get_answers();
-	if (count($answers) == 1) {
-	    $rightanswer = reset($answers);
-	    $rightanswer->answer = $qa->get_right_answer_summary();
-	} else {
-	   echo  "cannot handle more than one answer<br>";
-	}
+        }
+        $answers = $question->get_answers();
+        if (count($answers) == 1) {
+            $rightanswer = reset($answers);
+            $rightanswer->answer = $qa->get_right_answer_summary();
+        } else {
+           print_error("cannot handle more than one answer");
+        }
         $feedbackimg = '';
-	if ($options->correctness) {
-		echo "renderer calling get_matching_answer which calls grading strategy grade<br>";
-		echo "currentanswer $currentanswer<Br>";
-		//$answer = $question->get_matching_answer(array('answer' => $currentanswer));
-		$answer = $question->grade_attempt(array('answer' => $currentanswer), $rightanswer);
-		//echo "get_last_qt_var " . $qa->get_last_qt_var('answer') . "<br>";
-		//$answer = $question->get_matching_answer(array('answer' => $qa->get_last_qt_var('answer')));
-		//echo "last qt var for answer: " . $qa->get_last_qt_var('answer') . "<br>";
-		echo "right answer summary for attempt: $rightanswer->answer<br>";
-                //$answer = $question->get_matching_answer(array('answer' => $qa->get_right_answer_summary()));
-       		//$answer = $question->get_matching_answer(array('answer' => "decrypt_files_##FUNCTIONFLAG##"));
+        if ($options->correctness) {
+            //echo "currentanswer $currentanswer<Br>";
+            $answer = $question->grade_attempt(array('answer' => $currentanswer), $rightanswer);
+            //echo "right answer summary for attempt: $rightanswer->answer<br>";
             if ($answer) {
                 $fraction = $answer->fraction;
             } else {
                 $fraction = 0;
-	    }
-	    echo "fraction $fraction<Br>";
+            }
+            //echo "fraction $fraction<Br>";
             $inputattributes['class'] .= ' ' . $this->feedback_class($fraction);
-	    $feedbackimg = $this->feedback_image($fraction);
-	    echo "right answer summary is: " . $qa->get_right_answer_summary();
+            $feedbackimg = $this->feedback_image($fraction);
+            //echo "right answer summary is: " . $qa->get_right_answer_summary();
         }
 
         $questiontext = $question->format_questiontext($qa);
@@ -117,12 +110,12 @@ class qtype_mojomatch_renderer extends qtype_renderer {
     }
 
     public function specific_feedback(question_attempt $qa) {
-       echo "specific_feedback<br>";
+       //echo "specific_feedback<br>";
        $question = $qa->get_question();
        $answer = $question->get_matching_answer(array('answer' => $qa->get_last_qt_var('answer')));
        //$answer = $question->get_matching_answer(array('answer' => "decrypt_files_##FUNCTIONFLAG##"));
        if (!$answer || !$answer->feedback) {
-	       echo "wrong answer or no feedback<br>";
+               echo "wrong answer or no feedback<br>";
             return '';
         }
         return $question->format_text($answer->feedback, $answer->feedbackformat,
