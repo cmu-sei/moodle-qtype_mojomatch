@@ -218,8 +218,8 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             if ($ignorecase) {
                 $regexp .= 'i';
             }
-            echo "regexp $regexp<br>";
-            echo "string $string<br>";
+            //echo "regexp $regexp<br>";
+            //echo "string $string<br>";
             return preg_match($regexp, trim($string));
         }
     }
@@ -314,7 +314,6 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     }
 
     public function get_right_answer_summary() {
-        echo "question get_right_answer_summary<br>";
         $answer = parent::get_right_answer_summary();
         
         // parent calls

@@ -115,7 +115,6 @@ class qtype_mojomatch_renderer extends qtype_renderer {
        $answer = $question->get_matching_answer(array('answer' => $qa->get_last_qt_var('answer')));
        //$answer = $question->get_matching_answer(array('answer' => "decrypt_files_##FUNCTIONFLAG##"));
        if (!$answer || !$answer->feedback) {
-               echo "wrong answer or no feedback<br>";
             return '';
         }
         return $question->format_text($answer->feedback, $answer->feedbackformat,
