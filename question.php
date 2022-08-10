@@ -163,7 +163,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         } else if ($viewattempt == 1) {
             //echo "how can compare during view attempt<br>";
 	    //echo "we shouldnt even be here if its already been graded<br>";
-	    echo "viewattempt variable does not get used<br>";
+	    //echo "viewattempt variable does not get used<br>";
         }
         if ($matchtype == '0') {
             //matchalpha
