@@ -150,6 +150,14 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     }
 
     public static function compare_string_with_matchtype($string, $pattern, $ignorecase, $matchtype, $preview, $viewattempt, $transforms) {
+
+
+        if (!function_exists('str_contains')) {
+            function str_contains( $haystack, $needle) {
+                return $needle !== '' && mb_strpos($haystack, $needle) !== false;
+            }
+        }
+
         //echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
         $pattern = self::safe_normalize($pattern);
         $string = self::safe_normalize($string);
