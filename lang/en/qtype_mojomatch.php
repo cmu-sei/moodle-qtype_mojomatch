@@ -54,6 +54,6 @@ $string['matchalpha'] = 'MatchAlpha will strip all characters other than alphabe
 $string['matchany'] = 'MatchAny will check the response to a contain the answer as a substring.';
 $string['matchall'] = 'MatchAll will check a list of words to match the correct list of words.';
 $string['variant'] = 'The variant of the lab that the question belongs to.';
-$string['workspaceid'] = 'The ID of the topomojo workspace; used to find the running gamespace.';
+$string['workspaceid'] = 'The ID of the topomojo workspace.';
 $string['transforms'] = 'Whether the lab uses transforms to generate the answer during runtime.';
 

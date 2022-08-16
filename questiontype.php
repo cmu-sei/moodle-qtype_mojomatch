@@ -39,7 +39,7 @@ require_once($CFG->dirroot . '/question/type/mojomatch/question.php');
  */
 class qtype_mojomatch extends question_type {
     public function extra_question_fields() {
-        return array('qtype_mojomatch_options', 'usecase', 'matchtype', 'variant', 'transforms', 'workspaceid');
+        return array('qtype_mojomatch_options', 'usecase', 'matchtype', 'variant', 'transforms', 'workspaceid', 'qorder');
     }
 
     public function move_files($questionid, $oldcontextid, $newcontextid) {
@@ -60,7 +60,8 @@ class qtype_mojomatch extends question_type {
 	$this->set_default_value('matchtype', $fromform->matchtype);
 	$this->set_default_value('variant', $fromform->variant);
 	$this->set_default_value('transforms', $fromform->transforms);
-        $this->set_default_value('workspaceid', $fromform->workspaceid);
+	$this->set_default_value('workspaceid', $fromform->workspaceid);
+	$this->set_default_value('qorder', $fromform->qorder);
     }
 
     public function save_question_options($question) {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="question/type/mojomatch/db" VERSION="20130118" COMMENT="XMLDB file for Moodle question/type/mojomatch"
+<XMLDB PATH="question/type/mojomatch/db" VERSION="20220816" COMMENT="XMLDB file for Moodle question/type/mojomatch"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
 >
@@ -10,9 +10,10 @@
         <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Foreign key references question.id."/>
         <FIELD NAME="usecase" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether answers are matched case-sensitively."/>
         <FIELD NAME="matchtype" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Match type for answer."/>
-	<FIELD NAME="variant" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="The variant of the topomojo lab that this question belongs to."/>
-	<FIELD NAME="workspaceid" TYPE="text" LENGTH="255" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="The ID of the topomojo workspace; used to find the running gamespace."/>
+        <FIELD NAME="variant" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="The variant of the topomojo lab that this question belongs to."/>
+        <FIELD NAME="workspaceid" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the topomojo workspace; used to find the running gamespace."/>
         <FIELD NAME="transforms" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether the lab uses transforms to generate the answer during runtime."/>
+        <FIELD NAME="qorder" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The order in which this question appears inside the challenge variant."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
