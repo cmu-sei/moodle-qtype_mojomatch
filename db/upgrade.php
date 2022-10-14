@@ -81,19 +81,31 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
         // Mojomatch savepoint reached.
         upgrade_plugin_savepoint(true, 2022072203, 'qtype', 'mojomatch');
     }
-    if ($oldversion < 2022081601) {
+    if ($oldversion < 2022081501) {
 
         // Define field order to be added to qtype_mojomatch_options.
         $table = new xmldb_table('qtype_mojomatch_options');
-        $field = new xmldb_field('qorder', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'transforms');
+        $field = new xmldb_field('order', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'transforms');
 
-        // Conditionally launch add field qorder.
+        // Conditionally launch add field order.
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
 
         // Mojomatch savepoint reached.
-        upgrade_plugin_savepoint(true, 2022081601, 'qtype', 'mojomatch');
+        upgrade_plugin_savepoint(true, 2022081501, 'qtype', 'mojomatch');
+    }
+    if ($oldversion < 2022081600) {
+
+        // Rename field order on table qtype_mojomatch_options to qorder.
+        $table = new xmldb_table('qtype_mojomatch_options');
+        $field = new xmldb_field('order', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'transforms');
+
+        // Launch rename field order.
+        $dbman->rename_field($table, $field, 'qorder');
+
+        // Mojomatch savepoint reached.
+        upgrade_plugin_savepoint(true, 2022081600, 'qtype', 'mojomatch');
     }
     return true;
 }
