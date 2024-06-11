@@ -170,8 +170,8 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             }
         } else if ($viewattempt == 1) {
             //echo "how can compare during view attempt<br>";
-	    //echo "we shouldnt even be here if its already been graded<br>";
-	    //echo "viewattempt variable does not get used<br>";
+            //echo "we shouldnt even be here if its already been graded<br>";
+            //echo "viewattempt variable does not get used<br>";
         }
         if ($matchtype == '0') {
             //matchalpha
@@ -354,10 +354,22 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             // get gamespace
             $name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
             $all_events = list_events($client, $name);
-            $moodle_events = moodle_events($all_events);
-            $history = user_events($client, $moodle_events);
-            $gamespace = get_active_event($history);
-
+//print_r($all_events); exit;
+            if ($all_events) {
+                $moodle_events = moodle_events($all_events);
+            } else {
+                print_error("no events");
+            }
+            if ($moodle_events) {
+                $history = user_events($client, $moodle_events);
+            } else {
+                print_error("no user events");
+                   }
+            if ($history) {
+                $gamespace = get_active_event($history);
+            } else {
+                print_error("no history");
+            }
             if ($gamespace) {
                 $challenge = get_gamespace_challenge($client, $gamespace->id);
                 foreach ($challenge->challenge->sections as $section) {
@@ -369,7 +381,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
                     }
                 }
             } else {
-                print_error("we cannot talk to a running topomojo lab");
+                print_error("no gamepsace");
             }
             //echo "answer in topomojo is $answer<br>";
             return $answer;
