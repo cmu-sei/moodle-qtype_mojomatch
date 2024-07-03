@@ -38,6 +38,7 @@ require_once($CFG->dirroot . '/question/type/mojomatch/question.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_mojomatch extends question_type {
+
     public function extra_question_fields() {
         return array('qtype_mojomatch_options', 'usecase', 'matchtype', 'variant', 'transforms', 'workspaceid', 'qorder');
     }

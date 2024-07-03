@@ -38,6 +38,12 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         implements question_response_answer_comparer {
     /** @var boolean whether answers should be graded case-sensitively. */
     public $usecase;
+    public $workspaceid;
+    public $matchtype;
+    public $variant;
+    public $transforms;
+    public $qorder;
+
     /** @var array of question_answer. */
     public $answers = array();
 
@@ -402,7 +408,19 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         $answers = $this->get_answers();
         if (count($answers) == 1) {
             $rightanswer = reset($answers);
-            $rightanswer->answer = $qa->get_right_answer_summary();
+            if (method_exists($qa, 'get_right_answer_summary')) {
+                $transformed_answer = $qa->get_right_answer_summary();
+                if ($transformed_answer) {
+                    // Use the transformed answer if it's an object
+                    if (is_object($transformed_answer)) {
+                        $rightanswer = $transformed_answer;
+                    } else {
+                        // Otherwise, treat it as a string answer
+                        $rightanswer->answer = $transformed_answer;
+                    }
+                }
+            }
+            //$rightanswer->answer = $qa->get_right_answer_summary();
         } else {
            print_error("cannot handle more than one answer");
         }
