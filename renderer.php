@@ -54,7 +54,19 @@ class qtype_mojomatch_renderer extends qtype_renderer {
         $answers = $question->get_answers();
         if (count($answers) == 1) {
             $rightanswer = reset($answers);
-            $rightanswer->answer = $qa->get_right_answer_summary();
+            if (method_exists($qa, 'get_right_answer_summary')) {
+                $transformed_answer = $qa->get_right_answer_summary();
+                if ($transformed_answer) {
+                    // Use the transformed answer if it's an object
+                    if (is_object($transformed_answer)) {
+                        $rightanswer = $transformed_answer;
+                    } else {
+                        // Otherwise, treat it as a string answer
+                        $rightanswer->answer = $transformed_answer;
+                    }
+                }
+            }
+            //$rightanswer->answer = $qa->get_right_answer_summary();
         } else {
            print_error("cannot handle more than one answer");
         }
@@ -128,6 +140,6 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             return '';
         }
         return get_string('correctansweris', 'qtype_mojomatch',
-                s($question->clean_response($qa->get_right_answer_summary())));
+                s($answer->answer));
     }
 }
