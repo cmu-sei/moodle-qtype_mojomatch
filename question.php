@@ -35,7 +35,7 @@ require_once($CFG->dirroot . '/question/type/questionbase.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_mojomatch_question extends question_graded_by_strategy
-        implements question_response_answer_comparer {
+    implements question_response_answer_comparer {
     /** @var boolean whether answers should be graded case-sensitively. */
     public $usecase;
     public $workspaceid;
@@ -156,7 +156,6 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     }
 
     public static function compare_string_with_matchtype($string, $pattern, $ignorecase, $matchtype, $preview, $viewattempt, $transforms) {
-
 
         if (!function_exists('str_contains')) {
             function str_contains( $haystack, $needle) {
@@ -331,17 +330,17 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         $answer = parent::get_right_answer_summary();
         
         // parent calls
-    /*
+        /*
             $correctresponse = $this->get_correct_response();
         if (empty($correctresponse)) {
             return null;
         }
         return $this->summarise_response($correctresponse);
-     */
-    //whcih calls
-    //        $answer = $this->get_correct_answer();
-    //        whcih calls
-    //                return $this->gradingstrategy->get_correct_answer();
+        */
+        //which calls
+        //$answer = $this->get_correct_answer();
+        //which calls
+        //return $this->gradingstrategy->get_correct_answer();
 
         return $answer;
     }
@@ -349,18 +348,18 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     public function get_rightanswer_topomojo(question_attempt $qa) {
         //echo "get_rightanswer_topomojo<br>";
         if ($this->transforms) {
+            global $CFG;
+            require_once("$CFG->dirroot/mod/topomojo/locallib.php");
+
             //echo "using transforms for answer <br>";
             $x_api_key = get_config('qtype_topomojo', 'api_key');
             $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
-
-            global $CFG;
-            require_once("$CFG->dirroot/mod/topomojo/locallib.php");
 
             $client = $this->setup();
             // get gamespace
             $name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
             $all_events = list_events($client, $name);
-//print_r($all_events); exit;
+            //print_r($all_events); exit;
             if ($all_events) {
                 $moodle_events = moodle_events($all_events);
             } else {
@@ -370,7 +369,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
                 $history = user_events($client, $moodle_events);
             } else {
                 print_error("no user events");
-                   }
+            }
             if ($history) {
                 $gamespace = get_active_event($history);
             } else {
@@ -422,7 +421,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             }
             //$rightanswer->answer = $qa->get_right_answer_summary();
         } else {
-           print_error("cannot handle more than one answer");
+            print_error("cannot handle more than one answer");
         }
 
         $answer = $this->grade_attempt($response, $rightanswer);
