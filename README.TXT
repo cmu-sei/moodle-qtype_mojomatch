@@ -1,6 +1,7 @@
-﻿MojoMatch question type plugin for Moodle
+﻿# MojoMatch question type plugin for Moodle
 
-This question type provides additional matching options for a short answer question. The new question type is an extension of the SHORTANSWER type. It can be used on its own and can also be used in conxnjuction with the Moodle activity plugin for Topomojo labs, mod_topomjo.
+## Description
+This is a question type plugin that provides additional matching options for a short answer question. The new question type is an extension of the SHORTANSWER question type. It can be used on its own and can also be used in conjunction with the Moodle activity plugin for TopoMojo labs, mod_topomojo.
 
 ## Matching Options
 ### Match
@@ -14,4 +15,21 @@ This checks for the response to be a list of terms that is compared against the 
 
 CONTACT
 arwelle@cert.org
+
+## License
+MojoMatch question type plugin for Moodle
+
+Copyright 2024 Carnegie Mellon University.
+
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS.
+CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO,
+WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL.
+CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
+Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full terms.
+
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+
+This Software includes and/or makes use of Third-Party Software each subject to its own license.
+
+DM24-
 
