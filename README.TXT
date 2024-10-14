@@ -1,4 +1,4 @@
-﻿# MojoMatch question type plugin for Moodle
+﻿# TopoMojo question type plugin for Moodle
 
 ## Description
 This is a question type plugin that provides additional matching options for a short answer question. The new question type is an extension of the SHORTANSWER question type. It also will communicate with TopoMojo to pull answers from a running gamespace. It is used in conjunction with the Moodle activity plugin for TopoMojo labs, mod_topomojo and also the TopoMojo question behaviour plugin for Moodle, qbehaviour_mojomatch..
