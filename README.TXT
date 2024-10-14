@@ -13,9 +13,6 @@ This checks for the response to contain the answer as a substring.
 ### MatchAll
 This checks for the response to be a list of terms that is compared against the answer as a list of terms.
 
-CONTACT
-arwelle@cert.org
-
 ## License
 TopoMojo Question Type Plugin for Moodle
 
