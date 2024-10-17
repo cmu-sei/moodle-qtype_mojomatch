@@ -14,12 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+TopoMojo Question Type Plugin for Moodle
+
+Copyright 2024 Carnegie Mellon University.
+
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
+CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
+WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
+CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
+Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full 
+terms.
+
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+
+This Software includes and/or makes use of Third-Party Software each subject to its own license.
+
+DM24-1315
+*/
+
 /**
  * Strings for component 'qtype_mojomatch', language 'en', branch 'MOODLE_20_STABLE'
  *
  * @package    qtype
  * @subpackage mojomatch
- * @copyright  1999 onwards Martin Dougiamas  {@link http://moodle.com}
+ * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -35,13 +54,13 @@ $string['correctanswers'] = 'Correct answers';
 $string['filloutoneanswer'] = 'You must provide at least one possible answer. Answers left blank will not be used. \'*\' can be used as a wildcard to match any characters. The first matching answer will be used to determine the score and feedback.';
 $string['notenoughanswers'] = 'This type of question requires at least {$a} answers';
 $string['pleaseenterananswer'] = 'Please enter an answer.';
-$string['pluginname'] = 'MojoMatch';
+$string['pluginname'] = 'TopoMojo';
 $string['pluginname_help'] = 'In response to a question (that may include an image) the respondent types a word or short phrase. There may be several possible correct answers, each with a different grade. If the "Case sensitive" option is selected, then you can have different scores for "Word" or "word".';
 $string['pluginname_link'] = 'question/type/mojomatch';
 $string['pluginnameadding'] = 'Adding a mojomatch question';
-$string['pluginnameediting'] = 'Editing a MojoMatch question';
+$string['pluginnameediting'] = 'Editing a TopoMojo question';
 $string['pluginnamesummary'] = 'Allows a response of one or a few words that is graded by comparing against various model answers, which may contain wildcards.';
-$string['privacy:metadata'] = 'MojoMatch question type plugin allows question authors to set default options as user preferences.';
+$string['privacy:metadata'] = 'TopoMojo question type plugin allows question authors to set default options as user preferences.';
 $string['privacy:preference:defaultmark'] = 'The default mark set for a given question.';
 $string['privacy:preference:penalty'] = 'The penalty for each incorrect try when questions are run using the \'Interactive with multiple tries\' or \'Adaptive mode\' behaviour.';
 $string['privacy:preference:usecase'] = 'Whether the answers should be case sensitive.';

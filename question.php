@@ -14,6 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+TopoMojo Question Type Plugin for Moodle
+
+Copyright 2024 Carnegie Mellon University.
+
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
+CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
+WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
+CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
+Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full 
+terms.
+
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+
+This Software includes and/or makes use of Third-Party Software each subject to its own license.
+
+DM24-1315
+*/
+
 /**
  * mojomatch question definition class.
  *
@@ -177,7 +196,8 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             //echo "how can compare during view attempt<br>";
             //echo "we shouldnt even be here if its already been graded<br>";
             //echo "viewattempt variable does not get used<br>";
-        }
+            // TODO should this throw an error or a debug message?
+	}
         if ($matchtype == '0') {
             //matchalpha
             $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
@@ -355,7 +375,8 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             $x_api_key = get_config('qtype_topomojo', 'api_key');
             $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
 
-            $client = $this->setup();
+	    $client = $this->setup();
+	    // TODO test value of client
             // get gamespace
             $name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
             $all_events = list_events($client, $name);
