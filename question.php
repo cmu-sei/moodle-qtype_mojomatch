@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /*
-TopoMojo Question Type Plugin for Moodle
+TopoMojo Plugin for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
@@ -26,11 +26,12 @@ CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT T
 Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full 
 terms.
 
-[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution.  
+Please see Copyright notice for non-US Government use and distribution.
 
 This Software includes and/or makes use of Third-Party Software each subject to its own license.
 
-DM24-1315
+DM24-1175
 */
 
 /**
@@ -196,8 +197,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             //echo "how can compare during view attempt<br>";
             //echo "we shouldnt even be here if its already been graded<br>";
             //echo "viewattempt variable does not get used<br>";
-            // TODO should this throw an error or a debug message?
-	}
+        }
         if ($matchtype == '0') {
             //matchalpha
             $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
@@ -366,21 +366,17 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     }
 
     public function get_rightanswer_topomojo(question_attempt $qa) {
-        //echo "get_rightanswer_topomojo<br>";
-        if ($this->transforms) {
             global $CFG;
             require_once("$CFG->dirroot/mod/topomojo/locallib.php");
 
-            //echo "using transforms for answer <br>";
             $x_api_key = get_config('qtype_topomojo', 'api_key');
             $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
 
-	    $client = $this->setup();
-	    // TODO test value of client
+            $client = $this->setup();
             // get gamespace
             $name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
             $all_events = list_events($client, $name);
-            //print_r($all_events); exit;
+
             if ($all_events) {
                 $moodle_events = moodle_events($all_events);
             } else {
@@ -400,18 +396,15 @@ class qtype_mojomatch_question extends question_graded_by_strategy
                 $challenge = get_gamespace_challenge($client, $gamespace->id);
                 foreach ($challenge->challenge->sections as $section) {
                     foreach ($section->questions as $question) {
-                        if ($question->text == $this->questiontext) {
-                            $answer= $question->answer;
-                            break;
-                        }
+                        if (trim($question->text) == trim($this->questiontext)) {
+                            $answer = $question->answer;                    }
                     }
                 }
             } else {
                 print_error("no gamepsace");
             }
-            //echo "answer in topomojo is $answer<br>";
+
             return $answer;
-        }
 
     }
 
@@ -495,4 +488,3 @@ class mojomatch_grading_strategy extends question_first_matching_answer_grading_
         return null;
     }
 }
-
