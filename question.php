@@ -197,7 +197,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             //echo "we shouldnt even be here if its already been graded<br>";
             //echo "viewattempt variable does not get used<br>";
             // TODO should this throw an error or a debug message?
-	}
+        }
         if ($matchtype == '0') {
             //matchalpha
             $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
@@ -366,53 +366,47 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     }
 
     public function get_rightanswer_topomojo(question_attempt $qa) {
-        //echo "get_rightanswer_topomojo<br>";
-        if ($this->transforms) {
-            global $CFG;
-            require_once("$CFG->dirroot/mod/topomojo/locallib.php");
+        global $CFG;
+        require_once("$CFG->dirroot/mod/topomojo/locallib.php");
 
-            //echo "using transforms for answer <br>";
-            $x_api_key = get_config('qtype_topomojo', 'api_key');
-            $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
+        $x_api_key = get_config('qtype_topomojo', 'api_key');
+        $topomojo_host = get_config('qtype_topomojo', 'topomojo_host');
 
-	    $client = $this->setup();
-	    // TODO test value of client
-            // get gamespace
-            $name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
-            $all_events = list_events($client, $name);
-            //print_r($all_events); exit;
-            if ($all_events) {
-                $moodle_events = moodle_events($all_events);
-            } else {
-                print_error("no events");
-            }
-            if ($moodle_events) {
-                $history = user_events($client, $moodle_events);
-            } else {
-                print_error("no user events");
-            }
-            if ($history) {
-                $gamespace = get_active_event($history);
-            } else {
-                print_error("no history");
-            }
-            if ($gamespace) {
-                $challenge = get_gamespace_challenge($client, $gamespace->id);
-                foreach ($challenge->challenge->sections as $section) {
-                    foreach ($section->questions as $question) {
-                        if ($question->text == $this->questiontext) {
-                            $answer= $question->answer;
-                            break;
-                        }
+        $client = $this->setup();
+        // get gamespace
+        $name = preg_replace('/^(.*) - \d+$/', '${1}', $this->name);
+        $all_events = list_events($client, $name);
+
+        if ($all_events) {
+            $moodle_events = moodle_events($all_events);
+        } else {
+            print_error("no events");
+        }
+        if ($moodle_events) {
+            $history = user_events($client, $moodle_events);
+        } else {
+            print_error("no user events");
+        }
+        if ($history) {
+            $gamespace = get_active_event($history);
+        } else {
+            print_error("no history");
+        }
+        if ($gamespace) {
+            $challenge = get_gamespace_challenge($client, $gamespace->id);
+            foreach ($challenge->challenge->sections as $section) {
+                foreach ($section->questions as $question) {
+                    if (trim($question->text) == trim($this->questiontext)) {
+                        $answer = $question->answer;
                     }
                 }
-            } else {
-                print_error("no gamepsace");
             }
-            //echo "answer in topomojo is $answer<br>";
-            return $answer;
+        } else {
+            debugging("no gamespace found for question", DEBUG_DEVELOPER);
+            print_error("no gamespace");
         }
 
+        return $answer;
     }
 
     public function grade_attempt(array $response, question_answer $rightanswer) {
@@ -495,4 +489,3 @@ class mojomatch_grading_strategy extends question_first_matching_answer_grading_
         return null;
     }
 }
-
