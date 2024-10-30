@@ -197,7 +197,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             //echo "we shouldnt even be here if its already been graded<br>";
             //echo "viewattempt variable does not get used<br>";
             // TODO should this throw an error or a debug message?
-	}
+        }
         if ($matchtype == '0') {
             //matchalpha
             $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
@@ -397,15 +397,16 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             foreach ($challenge->challenge->sections as $section) {
                 foreach ($section->questions as $question) {
                     if (trim($question->text) == trim($this->questiontext)) {
-                        $answer = $question->answer;                    }
+                        $answer = $question->answer;
+                    }
                 }
             }
         } else {
-            print_error("no gamepsace");
+            debugging("no gamespace found for question", DEBUG_DEVELOPER);
+            print_error("no gamespace");
         }
 
         return $answer;
-
     }
 
     public function grade_attempt(array $response, question_answer $rightanswer) {
