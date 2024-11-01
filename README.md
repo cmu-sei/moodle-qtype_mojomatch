@@ -5,13 +5,13 @@ This is a question type plugin that provides additional matching options for a s
 
 ## Matching Options
 ### Match
-This is the same as the short answer question.
+This is the same as the short answer question. User has to enter exactly what the answer field says.
 ### MatchAlpha
-This strips all non-alphanumeric characters from both the answer and response before comparison.
+This strips all non-alphanumeric characters from both the answer and response before comparison. This is useful for things like paths where it doesn't matter if the user enters C:\Users\ or C:/Users/
 ### MatchAny
-This checks for the response to contain the answer as a substring.
+This checks for the response to contain the answer as a substring. The answer field supplies a pipe-delimited set of answers. The user has to enter any one of those answers. This is useful if a question has more than 1 answer and you only care if they enter one of the correct answers. 
 ### MatchAll
-This checks for the response to be a list of terms that is compared against the answer as a list of terms.
+This checks for the response to be a list of terms that is compared against the answer as a list of terms. The answer field supplies a pipe-delimited set of answers. The user has to enter all of those answers (order does not matter). 
 
 ## License
 TopoMojo Question Type Plugin for Moodle
