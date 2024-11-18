@@ -45,8 +45,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 
 class qtype_mojomatch_renderer extends qtype_renderer {
-    public function formulation_and_controls(question_attempt $qa,
-            question_display_options $options) {
+    public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
         $question = $qa->get_question();
         $currentanswer = $qa->get_last_qt_var('answer');
         $inputname = $qa->get_qt_field_name('answer');
@@ -58,53 +57,71 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             'size' => 80,
             'class' => 'form-control d-inline',
         );
-
+    
         if ($options->readonly) {
             $inputattributes['readonly'] = 'readonly';
         }
-        $answers = $question->get_answers();
-        if (count($answers) == 1) {
-            $rightanswer = reset($answers);
-            if (method_exists($qa, 'get_right_answer_summary')) {
-                $transformed_answer = $qa->get_right_answer_summary();
-                if ($transformed_answer) {
-                    // Use the transformed answer if it's an object
-                    if (is_object($transformed_answer)) {
-                        $rightanswer = $transformed_answer;
-                    } else {
-                        // Otherwise, treat it as a string answer
-                        $rightanswer->answer = $transformed_answer;
+    
+        // Fetch original question text
+        $original_question_text = $question->format_questiontext($qa);
+    
+        // Check if the question has a transform pattern
+        $has_transform_pattern = preg_match('/##[a-zA-Z_0-9]+##/', $original_question_text);
+    
+        if ($has_transform_pattern) {
+            // If there is a transform, retrieve the transformed question text and answer
+            $question_index = $qa->get_slot() - 1;
+            $transformed_question_text = $question->get_transformed_question_topomojo($question_index);
+            $questiontext = $transformed_question_text ? $transformed_question_text : $original_question_text;
+    
+            // Retrieve the transformed answer using `get_right_answer_summary`
+            $answers = $question->get_answers();
+            if (count($answers) == 1) {
+                $rightanswer = reset($answers);
+                if (method_exists($qa, 'get_right_answer_summary')) {
+                    $transformed_answer = $qa->get_right_answer_summary();
+                    if ($transformed_answer) {
+                        $rightanswer->answer = is_object($transformed_answer) ? $transformed_answer : $transformed_answer;
                     }
                 }
+            } else {
+                print_error("cannot handle more than one answer");
             }
-            //$rightanswer->answer = $qa->get_right_answer_summary();
         } else {
-           print_error("cannot handle more than one answer");
+            // For non-transformed questions, retrieve and display the original question and answer
+            $questiontext = $original_question_text;
+    
+            $answers = $question->get_answers();
+            if (count($answers) == 1) {
+                $rightanswer = reset($answers);
+                if (method_exists($qa, 'get_right_answer_summary')) {
+                    $transformed_answer = $qa->get_right_answer_summary();
+                    if ($transformed_answer) {
+                        $rightanswer->answer = is_object($transformed_answer) ? $transformed_answer : $transformed_answer;
+                    }
+                }
+            } else {
+                print_error("cannot handle more than one answer");
+            }
         }
+    
+        // Handling feedback image for both original and transformed answers
         $feedbackimg = '';
         if ($options->correctness) {
-            //echo "currentanswer $currentanswer<Br>";
             $answer = $question->grade_attempt(array('answer' => $currentanswer), $rightanswer);
-            //echo "right answer summary for attempt: $rightanswer->answer<br>";
-            if ($answer) {
-                $fraction = $answer->fraction;
-            } else {
-                $fraction = 0;
-            }
-            //echo "fraction $fraction<Br>";
+            $fraction = $answer ? $answer->fraction : 0;
             $inputattributes['class'] .= ' ' . $this->feedback_class($fraction);
             $feedbackimg = $this->feedback_image($fraction);
-            //echo "right answer summary is: " . $qa->get_right_answer_summary();
         }
-
-        $questiontext = $question->format_questiontext($qa);
+    
+        // Placeholder and input handling
         $placeholder = false;
         if (preg_match('/_____+/', $questiontext, $matches)) {
             $placeholder = $matches[0];
             $inputattributes['size'] = round(strlen($placeholder) * 1.1);
         }
-        $input = html_writer::empty_tag('input', $inputattributes) . $feedbackimg;
-
+        $input = html_writer::empty_tag('input', $inputattributes);
+    
         if ($placeholder) {
             $inputinplace = html_writer::tag('label', get_string('answer'),
                     array('for' => $inputattributes['id'], 'class' => 'accesshide'));
@@ -112,9 +129,9 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             $questiontext = substr_replace($questiontext, $inputinplace,
                     strpos($questiontext, $placeholder), strlen($placeholder));
         }
-
+    
         $result = html_writer::tag('div', $questiontext, array('class' => 'qtext'));
-
+    
         if (!$placeholder) {
             $result .= html_writer::start_tag('div', array('class' => 'ablock form-inline'));
             $result .= html_writer::tag('label', get_string('answer', 'qtype_mojomatch',
@@ -122,15 +139,15 @@ class qtype_mojomatch_renderer extends qtype_renderer {
                     array('for' => $inputattributes['id']));
             $result .= html_writer::end_tag('div');
         }
-
+    
         if ($qa->get_state() == question_state::$invalid) {
             $result .= html_writer::nonempty_tag('div',
                     $question->get_validation_error(array('answer' => $currentanswer)),
                     array('class' => 'validationerror'));
         }
-
+    
         return $result;
-    }
+    }           
 
     public function specific_feedback(question_attempt $qa) {
        //echo "specific_feedback<br>";
