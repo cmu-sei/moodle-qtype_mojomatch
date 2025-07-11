@@ -339,23 +339,23 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         $all_events = list_events($client, $name);
     
         if (!$all_events) {
-            print_error("no events");
+            debugging("no events", DEBUG_DEVELOPER);
         }
     
         $moodle_events = moodle_events($all_events);
         if (!$moodle_events) {
-            print_error("no user events");
+            debugging("no user events", DEBUG_DEVELOPER);
         }
     
         $history = user_events($client, $moodle_events);
         if (!$history) {
-            print_error("no history");
+            debugging("no history", DEBUG_DEVELOPER);
         }
     
         $gamespace = get_active_event($history);
         if (!$gamespace) {
             debugging("no gamespace found for question", DEBUG_DEVELOPER);
-            print_error("no gamespace");
+            debugging("no gamespace", DEBUG_DEVELOPER);
         }
     
         $challenge = get_gamespace_challenge($client, $gamespace->id);
@@ -462,7 +462,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             }
             //$rightanswer->answer = $qa->get_right_answer_summary();
         } else {
-            print_error("cannot handle more than one answer");
+            debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
         }
 
         $answer = $this->grade_attempt($response, $rightanswer);
