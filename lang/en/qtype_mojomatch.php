@@ -75,4 +75,8 @@ $string['matchall'] = 'MatchAll will check a list of words to match the correct 
 $string['variant'] = 'The variant of the lab that the question belongs to.';
 $string['workspaceid'] = 'The ID of the topomojo workspace.';
 $string['transforms'] = 'Whether the lab uses transforms to generate the answer during runtime.';
+$string['variant_help'] = 'Select the specific variant of the lab this question is associated with.';
+$string['transforms_help'] = 'Enable this if the lab dynamically modifies or generates answers at runtime using transforms.';
+$string['workspaceid_help'] = 'Enter the unique identifier of the TopoMojo workspace of this lab activity.';
+
 
