@@ -53,6 +53,6 @@ $plugin->dependencies = [
     'mod_topomojo'         => 2025071100,
 ];
 
-$plugin->requires = 2025041401;
+$plugin->requires  = 2025041400;
 
 $plugin->maturity  = MATURITY_BETA;
