@@ -85,7 +85,7 @@ class qtype_mojomatch_renderer extends qtype_renderer {
                     }
                 }
             } else {
-                print_error("cannot handle more than one answer");
+                debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
             }
         } else {
             // For non-transformed questions, retrieve and display the original question and answer
@@ -101,7 +101,7 @@ class qtype_mojomatch_renderer extends qtype_renderer {
                     }
                 }
             } else {
-                print_error("cannot handle more than one answer");
+                debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
             }
         }
     
