@@ -111,13 +111,54 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return $this->answers;
     }
 
-    private function setup() {
-        $client = new curl;
-        $x_api_key = get_config('topomojo', 'apikey');
-        $topoHeaders = array( 'x-api-key: ' . $x_api_key, 'content-type: application/json' );
-        $client->setHeader($topoHeaders);
-        //debugging("api key $x_api_key", DEBUG_DEVELOPER);
-        return $client;
+    function setup() {
+        if (get_config('topomojo', 'enableapikey')) {
+            // Use external API key
+            $xapikey = get_config('topomojo', 'apikey');
+
+            if (empty($xapikey)) {
+                debugging("TopoMojo API key is enabled but not set in config.", DEBUG_DEVELOPER);
+                return null;
+            }
+
+            $client = new curl();
+            $headers = [
+                'x-api-key: ' . $xapikey,
+                'Content-Type: application/json'
+            ];
+            $client->setHeader($headers);
+
+            return $client;
+
+        } else {
+            // Use OAuth2 system client
+            if (get_config('topomojo', 'enableoauth')) {
+                $issuerid = get_config('topomojo', 'issuerid');
+            }
+            if (empty($issuerid)) {
+                debugging("OAuth2 issuer not set and API key is disabled.", DEBUG_DEVELOPER);
+                return null;
+            }
+
+            $issuer = \core\oauth2\api::get_issuer($issuerid);
+            if (!$issuer) {
+                debugging("Unable to load OAuth2 issuer with ID {$issuerid}", DEBUG_DEVELOPER);
+                return null;
+            }
+
+            try {
+                $client = \core\oauth2\api::get_system_oauth_client($issuer);
+                if (!$client) {
+                    debugging("Failed to initialize system OAuth2 client.", DEBUG_DEVELOPER);
+                    return null;
+                }
+            } catch (Exception $e) {
+                debugging("OAuth2 client error: " . $e->getMessage(), DEBUG_DEVELOPER);
+                return null;
+            }
+
+            return $client;
+        }
     }
 
     public function compare_response_with_answer(array $response, question_answer $answer) {
@@ -342,7 +383,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             debugging("no events", DEBUG_DEVELOPER);
         }
     
-        $moodle_events = moodle_events($all_events);
+        $moodle_events = moodle_events($client, $all_events);
         if (!$moodle_events) {
             debugging("no user events", DEBUG_DEVELOPER);
         }
@@ -413,7 +454,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             return null; // Return null if no events are found
         }
     
-        $moodle_events = moodle_events($all_events);
+        $moodle_events = moodle_events($client, $all_events);
         $history = user_events($client, $moodle_events);
         $gamespace = get_active_event($history);
     
