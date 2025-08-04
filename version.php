@@ -45,12 +45,12 @@ DM24-1315
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'qtype_mojomatch';
-$plugin->version   = 2025080200;
+$plugin->version   = 2025080400;
 
 // This is a list of plugins, this plugin depends on (and their versions).
 $plugin->dependencies = [
     'qbehaviour_mojomatch' => 2025071100,
-    'mod_topomojo'         => 2025072500,
+    'mod_topomojo'         => 2025080400,
 ];
 
 $plugin->requires = 2025041400;
