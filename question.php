@@ -444,7 +444,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     
         $x_api_key = get_config('qtype_topomojo', 'api_key');
         $client = $this->setup();
-        $all_events = list_all_active_events($client, $name);
+        $all_events = list_all_active_events($client);
     
         // Check if there are events, and if not, return null or a fallback value
         if (!$all_events) {
