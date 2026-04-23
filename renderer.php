@@ -69,40 +69,22 @@ class qtype_mojomatch_renderer extends qtype_renderer {
         $has_transform_pattern = preg_match('/##[a-zA-Z_0-9]+##/', $original_question_text);
     
         if ($has_transform_pattern) {
-            // If there is a transform, retrieve the transformed question text and answer
             $question_index = $qa->get_slot() - 1;
-            $transformed_question_text = $question->get_transformed_question_topomojo($question_index);
+            $transformed_question_text = $question->get_transformed_question_topomojo($question_index, $qa);
             $questiontext = $transformed_question_text ? $transformed_question_text : $original_question_text;
-    
-            // Retrieve the transformed answer using `get_right_answer_summary`
-            $answers = $question->get_answers();
-            if (count($answers) == 1) {
-                $rightanswer = reset($answers);
-                if (method_exists($qa, 'get_right_answer_summary')) {
-                    $transformed_answer = $qa->get_right_answer_summary();
-                    if ($transformed_answer) {
-                        $rightanswer->answer = is_object($transformed_answer) ? $transformed_answer : $transformed_answer;
-                    }
-                }
-            } else {
-                debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
+        } else {
+            $questiontext = $original_question_text;
+        }
+
+        $answers = $question->get_answers();
+        if (count($answers) == 1) {
+            $rightanswer = reset($answers);
+            $live_answer = $question->get_rightanswer_topomojo($qa);
+            if ($live_answer) {
+                $rightanswer->answer = $live_answer;
             }
         } else {
-            // For non-transformed questions, retrieve and display the original question and answer
-            $questiontext = $original_question_text;
-    
-            $answers = $question->get_answers();
-            if (count($answers) == 1) {
-                $rightanswer = reset($answers);
-                if (method_exists($qa, 'get_right_answer_summary')) {
-                    $transformed_answer = $qa->get_right_answer_summary();
-                    if ($transformed_answer) {
-                        $rightanswer->answer = is_object($transformed_answer) ? $transformed_answer : $transformed_answer;
-                    }
-                }
-            } else {
-                debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
-            }
+            debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
         }
     
         // Handling feedback image for both original and transformed answers
@@ -163,6 +145,10 @@ class qtype_mojomatch_renderer extends qtype_renderer {
 
     public function correct_response(question_attempt $qa) {
         $question = $qa->get_question();
+        $live_answer = $question->get_rightanswer_topomojo($qa);
+        if ($live_answer) {
+            return get_string('correctansweris', 'qtype_mojomatch', s($live_answer));
+        }
         $answer = $question->get_matching_answer($question->get_correct_response());
         if (!$answer) {
             return '';
