@@ -370,58 +370,90 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return $answer;
     }
 
-    public function get_rightanswer_topomojo(question_attempt $qa) {
+    /**
+     * Look up the event ID for this question attempt from the topomojo_attempts table.
+     */
+    protected function get_eventid_for_attempt(question_attempt $qa) {
+        global $DB;
+        $qubaid = $qa->get_usage_id();
+        if (!is_numeric($qubaid)) {
+            return null;
+        }
+        return $DB->get_field('topomojo_attempts', 'eventid', ['questionusageid' => $qubaid]);
+    }
+
+    /**
+     * Fetch the gamespace challenge for this specific attempt's event.
+     * Falls back to searching all active events if the attempt lookup fails.
+     */
+    protected function get_challenge_for_attempt(question_attempt $qa) {
         global $CFG;
         require_once("$CFG->dirroot/mod/topomojo/locallib.php");
-    
-        $x_api_key = get_config('qtype_topomojo', 'api_key');
+
         $client = $this->setup();
+        if (!$client) {
+            debugging("Failed to set up TopoMojo client", DEBUG_DEVELOPER);
+            return null;
+        }
+
+        $eventid = $this->get_eventid_for_attempt($qa);
+        if ($eventid) {
+            debugging("Using event ID from attempt record: $eventid", DEBUG_DEVELOPER);
+            return get_gamespace_challenge($client, $eventid);
+        }
+
+        debugging("No event ID on attempt record, falling back to active event search", DEBUG_DEVELOPER);
         $all_events = list_all_active_events($client);
-    
         if (!$all_events) {
             debugging("no events", DEBUG_DEVELOPER);
+            return null;
         }
-    
+
         $moodle_events = moodle_events($client, $all_events);
         if (!$moodle_events) {
-            debugging("no user events", DEBUG_DEVELOPER);
+            debugging("no moodle events", DEBUG_DEVELOPER);
+            return null;
         }
-    
+
         $history = user_events($client, $moodle_events);
         if (!$history) {
-            debugging("no history", DEBUG_DEVELOPER);
+            debugging("no user events", DEBUG_DEVELOPER);
+            return null;
         }
-    
+
         $gamespace = get_active_event($history);
         if (!$gamespace) {
-            debugging("no gamespace found for question", DEBUG_DEVELOPER);
-            debugging("no gamespace", DEBUG_DEVELOPER);
+            debugging("no active gamespace found", DEBUG_DEVELOPER);
+            return null;
         }
-    
-        $challenge = get_gamespace_challenge($client, $gamespace->id);
-    
-        // Prepare the transformed question text for comparison by applying TopoMojo transforms
-        $question_index = $qa->get_slot() - 1; // Determine the index based on the slot
-        $transformed_question_text = $this->get_transformed_question_topomojo($question_index);
-        
-        // Normalize both texts for comparison by replacing placeholders if needed
+
+        return get_gamespace_challenge($client, $gamespace->id);
+    }
+
+    public function get_rightanswer_topomojo(question_attempt $qa) {
+        $challenge = $this->get_challenge_for_attempt($qa);
+        if (!$challenge || !isset($challenge->challenge->sections)) {
+            return null;
+        }
+
+        $question_index = $qa->get_slot() - 1;
+        $transformed_question_text = $this->get_transformed_question_topomojo($question_index, $qa);
+
         $normalized_moodle_text = $this->normalize_text_for_comparison($this->questiontext);
         $normalized_transformed_text = $this->normalize_text_for_comparison($transformed_question_text);
-    
+
         foreach ($challenge->challenge->sections as $section) {
             foreach ($section->questions as $question) {
-                // Normalize TopoMojo question text for comparison
                 $normalized_topomojo_text = $this->normalize_text_for_comparison($question->text);
-                
-                // Check if normalized Moodle text or transformed text matches the TopoMojo text
+
                 if (trim($normalized_moodle_text) === trim($normalized_topomojo_text) ||
                     trim($normalized_transformed_text) === trim($normalized_topomojo_text)) {
                     return $question->answer;
                 }
             }
         }
-    
-        return null; // Return null if no match is found
+
+        return null;
     }  
 
     private function normalize_text_for_comparison($text) {
@@ -438,40 +470,39 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     }
         
 
-    public function get_transformed_question_topomojo($index) {
-        global $CFG;
-        require_once("$CFG->dirroot/mod/topomojo/locallib.php");
-    
-        $x_api_key = get_config('qtype_topomojo', 'api_key');
-        $client = $this->setup();
-        $all_events = list_all_active_events($client);
-    
-        // Check if there are events, and if not, return null or a fallback value
-        if (!$all_events) {
-            debugging("No events found", DEBUG_DEVELOPER);
-            return null; // Return null if no events are found
+    public function get_transformed_question_topomojo($index, ?question_attempt $qa = null) {
+        if ($qa) {
+            $challenge = $this->get_challenge_for_attempt($qa);
+        } else {
+            global $CFG;
+            require_once("$CFG->dirroot/mod/topomojo/locallib.php");
+
+            $client = $this->setup();
+            $all_events = list_all_active_events($client);
+
+            if (!$all_events) {
+                debugging("No events found", DEBUG_DEVELOPER);
+                return null;
+            }
+
+            $moodle_events = moodle_events($client, $all_events);
+            $history = user_events($client, $moodle_events);
+            $gamespace = get_active_event($history);
+
+            if (!$gamespace) {
+                debugging("No gamespace found for question", DEBUG_DEVELOPER);
+                return null;
+            }
+
+            $challenge = get_gamespace_challenge($client, $gamespace->id);
         }
-    
-        $moodle_events = moodle_events($client, $all_events);
-        $history = user_events($client, $moodle_events);
-        $gamespace = get_active_event($history);
-    
-        // Check if there is an active gamespace, and if not, return null
-        if (!$gamespace) {
-            debugging("No gamespace found for question", DEBUG_DEVELOPER);
-            return null; // Return null if no gamespace is found
+
+        if (!$challenge || !isset($challenge->challenge->sections[0]->questions[$index])) {
+            debugging("Question at index $index not found", DEBUG_DEVELOPER);
+            return null;
         }
-    
-        $challenge = get_gamespace_challenge($client, $gamespace->id);
-    
-        // Check if there are questions in the challenge and the specified index exists
-        if (isset($challenge->challenge->sections[0]->questions[$index])) {
-            return $challenge->challenge->sections[0]->questions[$index]->text;
-        }
-    
-        // If the question at the specified index is not found, return null
-        debugging("Question at index $index not found", DEBUG_DEVELOPER);
-        return null;
+
+        return $challenge->challenge->sections[0]->questions[$index]->text;
     }           
 
     public function grade_attempt(array $response, question_answer $rightanswer) {
@@ -483,23 +514,13 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     }
 
     public function grade_response_qa(array $response, question_attempt $qa) {
-        //echo "grade_response_qa<br>";    
         $answers = $this->get_answers();
         if (count($answers) == 1) {
             $rightanswer = reset($answers);
-            if (method_exists($qa, 'get_right_answer_summary')) {
-                $transformed_answer = $qa->get_right_answer_summary();
-                if ($transformed_answer) {
-                    // Use the transformed answer if it's an object
-                    if (is_object($transformed_answer)) {
-                        $rightanswer = $transformed_answer;
-                    } else {
-                        // Otherwise, treat it as a string answer
-                        $rightanswer->answer = $transformed_answer;
-                    }
-                }
+            $live_answer = $this->get_rightanswer_topomojo($qa);
+            if ($live_answer) {
+                $rightanswer->answer = $live_answer;
             }
-            //$rightanswer->answer = $qa->get_right_answer_summary();
         } else {
             debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
         }
