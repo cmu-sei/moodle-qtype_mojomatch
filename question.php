@@ -376,6 +376,9 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     protected function get_eventid_for_attempt(question_attempt $qa) {
         global $DB;
         $qubaid = $qa->get_usage_id();
+        if (!is_numeric($qubaid)) {
+            return null;
+        }
         return $DB->get_field('topomojo_attempts', 'eventid', ['questionusageid' => $qubaid]);
     }
 
