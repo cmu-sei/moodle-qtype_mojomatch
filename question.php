@@ -514,23 +514,13 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     }
 
     public function grade_response_qa(array $response, question_attempt $qa) {
-        //echo "grade_response_qa<br>";    
         $answers = $this->get_answers();
         if (count($answers) == 1) {
             $rightanswer = reset($answers);
-            if (method_exists($qa, 'get_right_answer_summary')) {
-                $transformed_answer = $qa->get_right_answer_summary();
-                if ($transformed_answer) {
-                    // Use the transformed answer if it's an object
-                    if (is_object($transformed_answer)) {
-                        $rightanswer = $transformed_answer;
-                    } else {
-                        // Otherwise, treat it as a string answer
-                        $rightanswer->answer = $transformed_answer;
-                    }
-                }
+            $live_answer = $this->get_rightanswer_topomojo($qa);
+            if ($live_answer) {
+                $rightanswer->answer = $live_answer;
             }
-            //$rightanswer->answer = $qa->get_right_answer_summary();
         } else {
             debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
         }
