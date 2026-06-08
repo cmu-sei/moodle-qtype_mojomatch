@@ -398,11 +398,11 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 
         $eventid = $this->get_eventid_for_attempt($qa);
         if ($eventid) {
-            debugging("Using gamespace ID from attempt record: $eventid", DEBUG_DEVELOPER);
+            debugging("Found gamespace ID stored in attempt: $eventid", DEBUG_DEVELOPER);
             return get_gamespace_challenge($client, $eventid);
         }
 
-        debugging("No gamespace ID on attempt record, falling back to active gamespace search", DEBUG_DEVELOPER);
+        debugging("No gamespace ID stored in attempt, searching for active gamespace", DEBUG_DEVELOPER);
         $all_events = list_all_active_events($client);
         if (!$all_events) {
             debugging("no events", DEBUG_DEVELOPER);
