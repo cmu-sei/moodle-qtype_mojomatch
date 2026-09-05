@@ -50,7 +50,7 @@ $plugin->version   = 2026090500;
 // This is a list of plugins, this plugin depends on (and their versions).
 $plugin->dependencies = [
     'qbehaviour_mojomatch' => 2025071100,
-    'mod_topomojo'         => 2025081800,
+    'mod_topomojo'         => 2026052601,
 ];
 
 $plugin->requires = 2025041400;
