@@ -126,5 +126,77 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
         // Mojomatch savepoint reached.
         upgrade_plugin_savepoint(true, 2022081600, 'qtype', 'mojomatch');
     }
+    if ($oldversion < 2026090500) {
+
+        // Imports made before mod_topomojo 2026052601 recorded a 0-based variant on
+        // imported challenge questions. The matcher compares the 1-based gamespace
+        // variant against this column, so such a question can never match: the attempt
+        // is created with no question usage at all and the student is shown no
+        // questions and no error. Normalise those rows to 1.
+        //
+        // Only rows linked to a TopoMojo activity are touched, and only where every
+        // linked row for that activity is 0, which makes the shift unambiguous.
+        // Unlinked question bank residue is left as it is.
+        if ($dbman->table_exists('topomojo_questions')) {
+
+            // An activity whose linked rows mix 0 and 1 or more cannot be resolved
+            // without knowing which variant it serves. Report those and skip them.
+            $mixed = $DB->get_fieldset_sql(
+                "SELECT tq.topomojoid
+                   FROM {topomojo_questions} tq
+                   JOIN {qtype_mojomatch_options} o ON o.questionid = tq.questionid
+               GROUP BY tq.topomojoid
+                 HAVING MIN(o.variant) = 0 AND MAX(o.variant) >= 1"
+            );
+            foreach ($mixed as $topomojoid) {
+                mtrace("qtype_mojomatch: SKIPPED TopoMojo activity {$topomojoid} - "
+                    . 'mixed question variants, needs manual review');
+            }
+
+            // Resolve the affected question ids first. Selecting from
+            // qtype_mojomatch_options inside an UPDATE of the same table is rejected by
+            // MySQL and MariaDB, so the ids are gathered here and written by id.
+            $questionids = $DB->get_fieldset_sql(
+                "SELECT DISTINCT tq.questionid
+                   FROM {topomojo_questions} tq
+                  WHERE tq.topomojoid IN (
+                        SELECT tq2.topomojoid
+                          FROM {topomojo_questions} tq2
+                          JOIN {qtype_mojomatch_options} o2 ON o2.questionid = tq2.questionid
+                      GROUP BY tq2.topomojoid
+                        HAVING MAX(o2.variant) = 0)"
+            );
+
+            // A question shared with a skipped activity must not be shifted behind its
+            // back, otherwise "SKIPPED" would not be true.
+            if ($mixed && $questionids) {
+                [$mixedsql, $mixedparams] = $DB->get_in_or_equal($mixed, SQL_PARAMS_NAMED, 'mid');
+                $shared = $DB->get_fieldset_sql(
+                    "SELECT DISTINCT tq.questionid
+                       FROM {topomojo_questions} tq
+                      WHERE tq.topomojoid {$mixedsql}",
+                    $mixedparams
+                );
+                $questionids = array_values(array_diff($questionids, $shared));
+            }
+
+            $updated = 0;
+            foreach (array_chunk($questionids, 500) as $chunk) {
+                [$insql, $params] = $DB->get_in_or_equal($chunk, SQL_PARAMS_NAMED, 'qid');
+                $select = "variant = 0 AND questionid {$insql}";
+                $updated += $DB->count_records_select('qtype_mojomatch_options', $select, $params);
+                $DB->set_field_select('qtype_mojomatch_options', 'variant', 1, $select, $params);
+            }
+
+            mtrace("qtype_mojomatch: normalised {$updated} pre-fix question "
+                . 'variants from 0 to 1');
+        } else {
+            mtrace('qtype_mojomatch: mod_topomojo is not installed, '
+                . 'skipping variant normalisation');
+        }
+
+        // Mojomatch savepoint reached.
+        upgrade_plugin_savepoint(true, 2026090500, 'qtype', 'mojomatch');
+    }
     return true;
 }
