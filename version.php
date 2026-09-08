@@ -50,7 +50,9 @@ $plugin->version   = 2026090800;
 // This is a list of plugins, this plugin depends on (and their versions).
 $plugin->dependencies = [
     'qbehaviour_mojomatch' => 2025071100,
-    'mod_topomojo'         => 2026052601,
+    // Require the mod_topomojo that imports the challenge-JSON penalty into the
+    // question, so the mojomatch stack is never installed without penalty support.
+    'mod_topomojo'         => 2026090800,
 ];
 
 $plugin->requires = 2025041400;
