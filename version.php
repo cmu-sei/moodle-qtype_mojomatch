@@ -45,11 +45,17 @@ DM24-1315
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'qtype_mojomatch';
-$plugin->version   = 2026090801;
+$plugin->version   = 2026090900;
 
 // This is a list of plugins, this plugin depends on (and their versions).
 $plugin->dependencies = [
-    'qbehaviour_mojomatch' => 2025071100,
+    // question.php::make_behaviour() unconditionally instantiates
+    // qbehaviour_mojomatch whenever that plugin is present, so this is a hard
+    // runtime coupling rather than an optional one. Require the mode-aware
+    // version: older releases ignore the preferred behaviour passed to the
+    // constructor and would grade interactive/immediate-feedback attempts as if
+    // they were deferred feedback, silently and with no penalty applied.
+    'qbehaviour_mojomatch' => 2026090800,
     // Require the mod_topomojo that imports the challenge-JSON penalty into the
     // question, so the mojomatch stack is never installed without penalty support.
     'mod_topomojo'         => 2026090800,
