@@ -49,7 +49,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_mojomatch_test_helper extends question_test_helper {
-
     public function get_test_questions() {
         return ['exactmatch'];
     }
@@ -83,5 +82,35 @@ class qtype_mojomatch_test_helper extends question_test_helper {
         ];
         $q->qtype = question_bank::get_qtype('mojomatch');
         return $q;
+    }
+
+    /**
+     * The same question as {@see make_mojomatch_question_exactmatch()}, in the shape
+     * get_question_options() returns: every extra_question_fields() column under ->options.
+     *
+     * @return stdClass
+     */
+    public function get_mojomatch_question_data_exactmatch() {
+        $qdata = new stdClass();
+        test_question_maker::initialise_question_data($qdata);
+
+        $qdata->qtype = 'mojomatch';
+        $qdata->name = 'Mojomatch exact match';
+        $qdata->questiontext = 'Which command copies a file?';
+        $qdata->generalfeedback = 'The copy command is cp.';
+        $qdata->penalty = 0.1;
+
+        $qdata->options = new stdClass();
+        $qdata->options->usecase = 0;
+        $qdata->options->matchtype = '1';
+        $qdata->options->variant = 0;
+        $qdata->options->transforms = null;
+        $qdata->options->workspaceid = '';
+        $qdata->options->qorder = 0;
+        $qdata->options->answers = [
+            13 => new question_answer(13, 'cp', 1.0, '', FORMAT_HTML),
+        ];
+
+        return $qdata;
     }
 }
