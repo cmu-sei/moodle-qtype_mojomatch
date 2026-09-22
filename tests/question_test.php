@@ -465,4 +465,84 @@ final class question_test extends \advanced_testcase {
         $options = new \question_display_options();
         $this->assertNull($question->get_question_definition_for_external_rendering($qa, $options));
     }
+
+    /**
+     * Read the private options of a \curl instance.
+     *
+     * @param \curl $client Client to inspect.
+     * @return array The cURL options in force.
+     */
+    private function curl_options(\curl $client): array {
+        $options = \Closure::bind(
+            static function (\curl $client): array {
+                return (array) $client->options;
+            },
+            null,
+            \curl::class
+        );
+        return $options($client);
+    }
+
+    /**
+     * The client that fetches the correct answer decides the grade, so it must not accept
+     * an unverified certificate or wait on a stalled API for the length of a page request.
+     */
+    public function test_the_api_client_verifies_the_certificate_and_bounds_the_request(): void {
+        $this->resetAfterTest();
+
+        // What \curl hands out by default, and what configure_api_client() is for.
+        $client = new \curl();
+        $this->assertSame(0, $this->curl_options($client)['CURLOPT_SSL_VERIFYPEER']);
+        $this->assertArrayNotHasKey('CURLOPT_TIMEOUT', $this->curl_options($client));
+
+        qtype_mojomatch_question::configure_api_client($client);
+
+        $options = $this->curl_options($client);
+        $this->assertSame(1, $options['CURLOPT_SSL_VERIFYPEER']);
+        $this->assertSame(2, $options['CURLOPT_SSL_VERIFYHOST']);
+        $this->assertSame(5, $options['CURLOPT_CONNECTTIMEOUT']);
+        $this->assertSame(15, $options['CURLOPT_TIMEOUT']);
+    }
+
+    /**
+     * Core strips an Authorization header on a cross-host redirect but not x-api-key, so
+     * the key would otherwise go to whichever host a redirect named.
+     */
+    public function test_an_api_key_client_does_not_follow_redirects(): void {
+        $this->resetAfterTest();
+
+        $bearer = qtype_mojomatch_question::configure_api_client(new \curl());
+        $this->assertSame(1, $this->curl_options($bearer)['CURLOPT_FOLLOWLOCATION']);
+
+        $apikey = qtype_mojomatch_question::configure_api_client(new \curl(), true);
+        $this->assertSame(0, $this->curl_options($apikey)['CURLOPT_FOLLOWLOCATION']);
+    }
+
+    /**
+     * And setup() is where that happens, so grading never reaches an unconfigured client.
+     */
+    public function test_setup_returns_a_configured_api_key_client(): void {
+        $this->resetAfterTest();
+        set_config('enableapikey', 1, 'topomojo');
+        set_config('apikey', 'test-api-key-12345', 'topomojo');
+
+        $question = test_question_maker::make_question('mojomatch');
+        $options = $this->curl_options($question->setup());
+
+        $this->assertSame(1, $options['CURLOPT_SSL_VERIFYPEER']);
+        $this->assertSame(2, $options['CURLOPT_SSL_VERIFYHOST']);
+        $this->assertSame(5, $options['CURLOPT_CONNECTTIMEOUT']);
+        $this->assertSame(15, $options['CURLOPT_TIMEOUT']);
+        $this->assertSame(0, $options['CURLOPT_FOLLOWLOCATION']);
+    }
+
+    /**
+     * setup() returns null when nothing is configured, and configuring that must not fatal.
+     */
+    public function test_configuring_a_missing_client_is_harmless(): void {
+        $this->resetAfterTest();
+
+        $this->assertNull(qtype_mojomatch_question::configure_api_client(null));
+        $this->assertFalse(qtype_mojomatch_question::configure_api_client(false));
+    }
 }
