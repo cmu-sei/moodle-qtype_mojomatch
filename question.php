@@ -191,11 +191,16 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         $pattern = self::safe_normalize($pattern);
         $string = self::safe_normalize($string);
         if ($transforms && $preview) {
+            // The answer holds ##token## placeholders that only the lab substitutes, so a
+            // preview cannot grade it properly. Accept a response that carries what is left of
+            // the answer once the placeholders are dropped, whatever the matchtype: replacing
+            // the response with the answer here, as this used to, only happened to pass because
+            // every comparison below then compared the answer with itself.
             $regexp = "/##[a-zA-Z0-9]*##/";
             $string = preg_replace($regexp, '', $string);
             $pattern = preg_replace($regexp, '', $pattern);
             if (str_contains($string, $pattern)) {
-                $string = $pattern;
+                return true;
             }
         } else if ($viewattempt == 1) {
             //echo "how can compare during view attempt<br>";
@@ -203,46 +208,61 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             //echo "viewattempt variable does not get used<br>";
             // TODO should this throw an error or a debug message?
         }
+        // Each branch below is a port of one arm of TopoMojo's QuestionSpec::IsMatch(), in
+        // GamespaceExtensions.cs: the lab is graded by that code when the student submits to
+        // TopoMojo, and by this code when Moodle grades the attempt, so the two have to agree
+        // or the same response scores differently in the two places. The matchtype numbers are
+        // the plugin's own encoding of AnswerGrader, assigned by mod_topomojo's questionmanager
+        // when it imports a challenge: 0 matchAlpha, 1 matchAll, 2 matchAny, 3 match.
+        //
+        // TopoMojo drops every space from the answer and splits it on '|' into the alternatives
+        // it will accept, so that is shared by all four.
+        $answers = self::answer_alternatives($pattern);
+        $response = trim($string);
+
         if ($matchtype == '0') {
-            //matchalpha
-            $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
-            $pattern = preg_replace('/[^A-Za-z0-9]/', '', $pattern);
-            $regexp = "|^$pattern$|u";
-            // Make the match insensitive if requested to.
-            if ($ignorecase) {
-                $regexp .= 'i';
-            }
-            return preg_match($regexp, trim($string));
+            // matchAlpha: the first alternative only, compared after dropping every character
+            // that is not an ASCII letter or digit from both sides.
+            $expected = preg_replace('/[^A-Za-z0-9]/', '', reset($answers));
+            $given = preg_replace('/[^A-Za-z0-9]/', '', $response);
+            return self::strings_equal($expected, $given, $ignorecase);
         } else if ($matchtype == '1') {
-            //match
-            $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
-            $pattern = preg_replace('/[^A-Za-z0-9]/', '', $pattern);
+            // matchAll: every alternative has to appear among the words of the response, which
+            // TopoMojo splits on space, comma, semicolon, colon, pipe and tab. Extra words in
+            // the response are allowed. Comparing distinct alternatives against the response's
+            // words mirrors Intersect(), which drops duplicates: an answer that lists the same
+            // word twice cannot be satisfied there either.
+            $words = preg_split('/[ ,;:|\t]+/', $response, -1, PREG_SPLIT_NO_EMPTY);
             if ($ignorecase) {
-                $string = strtolower($string);
-                $pattern = strtolower($pattern);
+                $answers = array_map([self::class, 'fold_case'], $answers);
+                $words = array_map([self::class, 'fold_case'], $words);
             }
-            $regexp = '/[ ,;:|]/';
-            $answer = preg_split($regexp, $string);
-            $response = preg_split($regexp, $pattern);
-            $intersection = array_intersect($answer, $response);
-            if (count($intersection) == count($answer)) {
-                return true;
-            } else {
-                return false;
-            }
-        } else if ($matchtype =='2') {
-            //matchany
+            return count(array_intersect(array_unique($answers), $words)) === count($answers);
+        } else if ($matchtype == '2') {
+            // matchAny: the response, with its spaces dropped, has to equal one of the
+            // alternatives. It is not a substring test - a response that merely contains an
+            // alternative is wrong here, as it is in TopoMojo.
+            $given = str_replace(' ', '', $response);
             if ($ignorecase) {
-                $string = strtolower($string);
-                $pattern = strtolower($pattern);
+                $answers = array_map([self::class, 'fold_case'], $answers);
+                $given = self::fold_case($given);
             }
-            return str_contains($pattern, $string);
+            return in_array($given, $answers, true);
         } else if ($matchtype == '3') {
-            //match
+            // match: the first alternative only, compared whole. TopoMojo compares it for
+            // equality; Moodle has always also honoured '*' as a wildcard here, which the edit
+            // form's help documents, so that is kept - an answer without a '*' behaves exactly
+            // as TopoMojo grades it.
+            $expected = reset($answers);
+            $given = str_replace(' ', '', $response);
+
+            if (!str_contains($expected, '*')) {
+                return self::strings_equal($expected, $given, $ignorecase);
+            }
 
             // Break the string on non-escaped runs of asterisks.
             // ** is equivalent to *, but people were doing that, and with many *s it breaks preg.
-            $bits = preg_split('/(?<!\\\\)\*+/', $pattern);
+            $bits = preg_split('/(?<!\\\\)\*+/', $expected);
 
             // Escape regexp special characters in the bits.
             $escapedbits = array();
@@ -256,10 +276,43 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             if ($ignorecase) {
                 $regexp .= 'i';
             }
-            //echo "regexp $regexp<br>";
-            //echo "string $string<br>";
-            return preg_match($regexp, trim($string));
+            return preg_match($regexp, $given);
         }
+    }
+
+    /**
+     * Split a stored answer the way TopoMojo does before grading against it.
+     *
+     * @param string $answer the answer as authored or imported.
+     * @return array the alternatives it accepts, in order, with spaces dropped.
+     */
+    protected static function answer_alternatives($answer) {
+        return explode('|', str_replace(' ', '', $answer));
+    }
+
+    /**
+     * Lower-case a string for a case-insensitive comparison.
+     *
+     * @param string $string the string.
+     * @return string the string, lower-cased.
+     */
+    protected static function fold_case($string) {
+        return \core_text::strtolower($string);
+    }
+
+    /**
+     * Compare two strings, optionally ignoring case.
+     *
+     * @param string $expected the answer.
+     * @param string $given the response.
+     * @param bool $ignorecase whether case is unimportant.
+     * @return bool whether they are the same string.
+     */
+    protected static function strings_equal($expected, $given, $ignorecase) {
+        if ($ignorecase) {
+            return self::fold_case($expected) === self::fold_case($given);
+        }
+        return $expected === $given;
     }
 
     /**
@@ -430,49 +483,123 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return get_gamespace_challenge($client, $gamespace->id);
     }
 
-    public function get_rightanswer_topomojo(question_attempt $qa) {
-        $challenge = $this->get_challenge_for_attempt($qa);
+    /**
+     * Finds this question in the gamespace challenge the attempt is running against.
+     *
+     * Keyed on the three things mod_topomojo's questionmanager records when it imports
+     * a challenge question: the workspace, the variant, and the question's position in
+     * that variant. Anything else is a guess, and a guess here grades the response
+     * against another question's answer.
+     *
+     * This used to resolve by question text, then fall through to the question at the
+     * attempt's slot position. Both legs were wrong. The text comparison could not
+     * distinguish the same text repeated across variants with different answers, and
+     * it could not match a transform question at all, because
+     * normalize_text_for_comparison() substitutes the literal string '.*' and the
+     * comparison was ===. The positional fallback then resolved something regardless:
+     * the text of the question at that position was itself one of the two operands, so
+     * the comparison was guaranteed true when the loop reached it. That is how an
+     * answer from a different activity ended up grading a response.
+     *
+     * @param stdClass $challenge The gamespace challenge, as get_gamespace_challenge() returns it.
+     * @return stdClass|null The matching TopoMojo question, or null when it cannot be identified.
+     */
+    protected function find_gamespace_question($challenge) {
         if (!$challenge || !isset($challenge->challenge->sections)) {
             return null;
         }
 
-        $question_index = $qa->get_slot() - 1;
-        $transformed_question_text = $this->get_transformed_question_topomojo($question_index, $qa);
+        if (!$this->qorder) {
+            // Questions imported before qorder was recorded cannot be placed. The
+            // question bank's own answer is the only defensible one.
+            debugging('No qorder recorded for this question, so it cannot be matched to the ' .
+                'gamespace challenge; grading against the stored answer.', DEBUG_DEVELOPER);
+            return null;
+        }
 
-        $normalized_moodle_text = $this->normalize_text_for_comparison($this->questiontext);
-        $normalized_transformed_text = $this->normalize_text_for_comparison($transformed_question_text);
+        $wrongworkspace = !empty($this->workspaceid) && isset($challenge->workspaceId)
+            && $this->workspaceid !== $challenge->workspaceId;
+        if ($wrongworkspace) {
+            debugging("Gamespace workspace {$challenge->workspaceId} is not this question's " .
+                "workspace {$this->workspaceid}.", DEBUG_DEVELOPER);
+            return null;
+        }
 
+        // The variant is stored 1 based (questionmanager.php does $variant + 1); TopoMojo's
+        // GameState.variant is the 0 based index.
+        $wrongvariant = $this->variant !== null && isset($challenge->variant)
+            && (int)$this->variant !== (int)$challenge->variant + 1;
+        if ($wrongvariant) {
+            debugging("Gamespace is running variant " . ((int)$challenge->variant + 1) .
+                ", this question belongs to variant {$this->variant}.", DEBUG_DEVELOPER);
+            return null;
+        }
+
+        // The qorder counts every question of the variant, flattened across its sections
+        // and 1 based, which is how questionmanager.php assigns it. Indexing a single
+        // section would reintroduce the positional bug one level down.
+        $questions = $this->flatten_gamespace_questions($challenge);
+        $index = (int)$this->qorder - 1;
+        if (!isset($questions[$index])) {
+            debugging("Gamespace challenge has no question at position {$this->qorder}.", DEBUG_DEVELOPER);
+            return null;
+        }
+
+        return $questions[$index];
+    }
+
+    /**
+     * Returns the challenge's questions in the order qorder counts them.
+     *
+     * @param stdClass $challenge The gamespace challenge.
+     * @return array The questions of every section, in section order.
+     */
+    protected function flatten_gamespace_questions($challenge) {
+        $questions = [];
         foreach ($challenge->challenge->sections as $section) {
+            if (!isset($section->questions)) {
+                continue;
+            }
             foreach ($section->questions as $question) {
-                $normalized_topomojo_text = $this->normalize_text_for_comparison($question->text);
-
-                if (trim($normalized_moodle_text) === trim($normalized_topomojo_text) ||
-                    trim($normalized_transformed_text) === trim($normalized_topomojo_text)) {
-                    return $question->answer;
-                }
+                $questions[] = $question;
             }
         }
-
-        return null;
-    }  
-
-    private function normalize_text_for_comparison($text) {
-        if (!$text) {
-            return '';
-        }
-    
-        // Replace all ##...## patterns with a wildcard marker (like '.*')
-        // This treats the replaced transform values (like "firewall" or "command") as wildcard text.
-        $text = preg_replace('/##[a-zA-Z0-9_]+##/', '.*', $text);
-    
-        // Trim whitespace and lowercase for relaxed matching
-        return trim(strtolower($text));
+        return $questions;
     }
-        
 
+    /**
+     * Returns the answer TopoMojo holds for this question in the attempt's gamespace.
+     *
+     * @param question_attempt $qa The attempt being graded or rendered.
+     * @return string|null The live answer, or null when the question cannot be identified
+     *      in the gamespace - in which case the question bank's answer stands.
+     */
+    public function get_rightanswer_topomojo(question_attempt $qa) {
+        $question = $this->find_gamespace_question($this->get_challenge_for_attempt($qa));
+        if (!$question || !isset($question->answer) || trim($question->answer) === '') {
+            return null;
+        }
+
+        return $question->answer;
+    }
+
+    /**
+     * Returns the question text TopoMojo substituted the transforms into.
+     *
+     * With an attempt in hand the question is identified the same way grading
+     * identifies it, so the text shown is the text of the question being graded. The
+     * caller falls back to the stored question text when this returns null, which is
+     * the honest outcome: better the authored text with its ##token## placeholders
+     * showing than another question's text.
+     *
+     * @param int $index Position of the question, used only by the legacy no-attempt path.
+     * @param question_attempt|null $qa The attempt, when there is one.
+     * @return string|null The substituted question text, or null when it cannot be identified.
+     */
     public function get_transformed_question_topomojo($index, ?question_attempt $qa = null) {
         if ($qa) {
-            $challenge = $this->get_challenge_for_attempt($qa);
+            $question = $this->find_gamespace_question($this->get_challenge_for_attempt($qa));
+            return $question->text ?? null;
         } else {
             global $CFG;
             require_once("$CFG->dirroot/mod/topomojo/locallib.php");
@@ -515,14 +642,25 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 
     public function grade_response_qa(array $response, question_attempt $qa) {
         $answers = $this->get_answers();
-        if (count($answers) == 1) {
-            $rightanswer = reset($answers);
-            $live_answer = $this->get_rightanswer_topomojo($qa);
-            if ($live_answer) {
-                $rightanswer->answer = $live_answer;
-            }
-        } else {
-            debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
+        if (count($answers) !== 1) {
+            // There is no single answer for the live TopoMojo answer to replace, so grade
+            // against the question bank through the usual strategy, which tries every
+            // answer in turn. This used to fall through leaving $rightanswer unassigned,
+            // and grade_attempt()'s typed parameter then threw a TypeError: submitting the
+            // response failed outright rather than being graded. The edit form allows more
+            // than one answer row, so this is reachable by ordinary authoring.
+            debugging(
+                'Expected exactly one answer, found ' . count($answers) .
+                    '; grading against the stored answers without a live TopoMojo answer.',
+                DEBUG_DEVELOPER
+            );
+            return $this->grade_response($response);
+        }
+
+        $rightanswer = reset($answers);
+        $live_answer = $this->get_rightanswer_topomojo($qa);
+        if ($live_answer) {
+            $rightanswer->answer = $live_answer;
         }
 
         $answer = $this->grade_attempt($response, $rightanswer);

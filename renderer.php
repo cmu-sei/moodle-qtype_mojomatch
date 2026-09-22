@@ -76,22 +76,35 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             $questiontext = $original_question_text;
         }
 
+        // Only a question with a single answer has one answer for the live TopoMojo
+        // answer to replace. With any other number, leave $rightanswer unset and let the
+        // question grade the response itself below: reading an unassigned $rightanswer
+        // threw a TypeError out of grade_attempt() and took the whole page with it.
+        $rightanswer = null;
         $answers = $question->get_answers();
-        if (count($answers) == 1) {
+        if (count($answers) === 1) {
             $rightanswer = reset($answers);
             $live_answer = $question->get_rightanswer_topomojo($qa);
             if ($live_answer) {
                 $rightanswer->answer = $live_answer;
             }
         } else {
-            debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
+            debugging(
+                'Expected exactly one answer, found ' . count($answers) .
+                    '; showing correctness from the stored answers.',
+                DEBUG_DEVELOPER
+            );
         }
-    
+
         // Handling feedback image for both original and transformed answers
         $feedbackimg = '';
         if ($options->correctness) {
-            $answer = $question->grade_attempt(array('answer' => $currentanswer), $rightanswer);
-            $fraction = $answer ? $answer->fraction : 0;
+            if ($rightanswer) {
+                $answer = $question->grade_attempt(array('answer' => $currentanswer), $rightanswer);
+                $fraction = $answer ? $answer->fraction : 0;
+            } else {
+                [$fraction] = $question->grade_response(array('answer' => $currentanswer));
+            }
             $inputattributes['class'] .= ' ' . $this->feedback_class($fraction);
             $feedbackimg = $this->feedback_image($fraction);
         }
