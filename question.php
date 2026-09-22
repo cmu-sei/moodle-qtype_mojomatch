@@ -642,14 +642,25 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 
     public function grade_response_qa(array $response, question_attempt $qa) {
         $answers = $this->get_answers();
-        if (count($answers) == 1) {
-            $rightanswer = reset($answers);
-            $live_answer = $this->get_rightanswer_topomojo($qa);
-            if ($live_answer) {
-                $rightanswer->answer = $live_answer;
-            }
-        } else {
-            debugging("cannot handle more than one answer", DEBUG_DEVELOPER);
+        if (count($answers) !== 1) {
+            // There is no single answer for the live TopoMojo answer to replace, so grade
+            // against the question bank through the usual strategy, which tries every
+            // answer in turn. This used to fall through leaving $rightanswer unassigned,
+            // and grade_attempt()'s typed parameter then threw a TypeError: submitting the
+            // response failed outright rather than being graded. The edit form allows more
+            // than one answer row, so this is reachable by ordinary authoring.
+            debugging(
+                'Expected exactly one answer, found ' . count($answers) .
+                    '; grading against the stored answers without a live TopoMojo answer.',
+                DEBUG_DEVELOPER
+            );
+            return $this->grade_response($response);
+        }
+
+        $rightanswer = reset($answers);
+        $live_answer = $this->get_rightanswer_topomojo($qa);
+        if ($live_answer) {
+            $rightanswer->answer = $live_answer;
         }
 
         $answer = $this->grade_attempt($response, $rightanswer);

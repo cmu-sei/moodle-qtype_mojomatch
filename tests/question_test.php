@@ -404,6 +404,38 @@ final class question_test extends \advanced_testcase {
         $this->assertNull($this->find_gamespace_question($placeable, null));
     }
 
+    public function test_grade_response_qa_grades_without_a_live_answer_when_answers_are_not_singular(): void {
+        $this->set_pagetype('mod-topomojo-attempt');
+        $question = test_question_maker::make_question('mojomatch');
+
+        // Two answers is ordinary authoring: the edit form offers more answer rows. There
+        // is then no single answer for a live TopoMojo answer to replace, and reading an
+        // unassigned $rightanswer used to throw a TypeError out of grade_attempt(), so
+        // the submission failed instead of being graded. Grade through the strategy.
+        $question->answers = [
+            13 => new question_answer(13, 'cp', 1.0, '', FORMAT_HTML),
+            14 => new question_answer(14, 'copy', 0.5, '', FORMAT_HTML),
+        ];
+        $qa = test_question_maker::get_a_qa($question);
+
+        $this->assertEquals([1, question_state::$gradedright], $question->grade_response_qa(['answer' => 'cp'], $qa));
+        $this->assertDebuggingCalled();
+
+        $this->assertEquals(
+            [0.5, question_state::graded_state_for_fraction(0.5)],
+            $question->grade_response_qa(['answer' => 'copy'], $qa)
+        );
+        $this->assertDebuggingCalled();
+
+        $this->assertEquals([0, question_state::$gradedwrong], $question->grade_response_qa(['answer' => 'mv'], $qa));
+        $this->assertDebuggingCalled();
+
+        // No answers at all is wrong, rather than fatal.
+        $question->answers = [];
+        $this->assertEquals([0, question_state::$gradedwrong], $question->grade_response_qa(['answer' => 'cp'], $qa));
+        $this->assertDebuggingCalled();
+    }
+
     public function test_grade_response_qa_falls_back_to_the_static_answer(): void {
         $this->set_pagetype('mod-topomojo-attempt');
         $question = test_question_maker::make_question('mojomatch');
