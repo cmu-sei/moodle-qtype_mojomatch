@@ -77,12 +77,19 @@ class qtype_mojomatch extends question_type {
 
     public function save_defaults_for_new_questions(stdClass $fromform): void {
         parent::save_defaults_for_new_questions($fromform);
-	$this->set_default_value('usecase', $fromform->usecase);
-	$this->set_default_value('matchtype', $fromform->matchtype);
-	$this->set_default_value('variant', $fromform->variant);
-	$this->set_default_value('transforms', $fromform->transforms);
-	$this->set_default_value('workspaceid', $fromform->workspaceid);
-	$this->set_default_value('qorder', $fromform->qorder);
+
+        // Only the options the edit form actually carries, and only when it carried
+        // them. qorder is not one of them: it records where a question sits inside an
+        // imported TopoMojo challenge, so it is never typed by an author and arrives
+        // here unset. set_default_value() is typed string, so handing it that null
+        // threw, and the throw happened after the question had been written - which
+        // rolled the whole save back and left the author on an exception page with no
+        // question created.
+        foreach (['usecase', 'matchtype', 'variant', 'transforms', 'workspaceid'] as $field) {
+            if (isset($fromform->$field)) {
+                $this->set_default_value($field, (string) $fromform->$field);
+            }
+        }
     }
 
     public function save_question_options($question) {

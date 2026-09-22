@@ -124,6 +124,49 @@ final class question_type_test extends \advanced_testcase {
         ], $this->qtype->get_possible_responses($questiondata));
     }
 
+    public function test_save_defaults_for_new_questions_remembers_the_options_the_form_sent(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $fromform = new \stdClass();
+        $fromform->defaultmark = '1';
+        $fromform->penalty = '0.3333333';
+        $fromform->usecase = '1';
+        $fromform->matchtype = '2';
+        $fromform->variant = '3';
+        $fromform->transforms = '0';
+        $fromform->workspaceid = 'a-workspace';
+
+        $this->qtype->save_defaults_for_new_questions($fromform);
+
+        $this->assertEquals('1', get_user_preferences('qtype_mojomatch_usecase'));
+        $this->assertEquals('2', get_user_preferences('qtype_mojomatch_matchtype'));
+        $this->assertEquals('3', get_user_preferences('qtype_mojomatch_variant'));
+        $this->assertEquals('0', get_user_preferences('qtype_mojomatch_transforms'));
+        $this->assertEquals('a-workspace', get_user_preferences('qtype_mojomatch_workspaceid'));
+        // The generic elements are still handled by the parent.
+        $this->assertEquals('1', get_user_preferences('qtype_mojomatch_defaultmark'));
+    }
+
+    public function test_save_defaults_for_new_questions_skips_fields_the_form_does_not_carry(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // The qorder option is in extra_question_fields() but has no form element: it records
+        // where a question sits inside an imported TopoMojo challenge, so it arrives here unset.
+        // Handing that null to the typed set_default_value() threw, and it threw after the
+        // question had been written, which rolled the whole save back and left the author on
+        // an exception page with no question created.
+        $fromform = new \stdClass();
+        $fromform->usecase = '0';
+
+        $this->qtype->save_defaults_for_new_questions($fromform);
+
+        $this->assertEquals('0', get_user_preferences('qtype_mojomatch_usecase'));
+        $this->assertNull(get_user_preferences('qtype_mojomatch_qorder'));
+        $this->assertNull(get_user_preferences('qtype_mojomatch_matchtype'));
+    }
+
     public function test_save_question_options_rejects_no_full_credit_answer(): void {
         // The check runs before anything is written, so a rejected question leaves no partial row.
         $question = new \stdClass();
