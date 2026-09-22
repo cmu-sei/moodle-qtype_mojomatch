@@ -191,11 +191,16 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         $pattern = self::safe_normalize($pattern);
         $string = self::safe_normalize($string);
         if ($transforms && $preview) {
+            // The answer holds ##token## placeholders that only the lab substitutes, so a
+            // preview cannot grade it properly. Accept a response that carries what is left of
+            // the answer once the placeholders are dropped, whatever the matchtype: replacing
+            // the response with the answer here, as this used to, only happened to pass because
+            // every comparison below then compared the answer with itself.
             $regexp = "/##[a-zA-Z0-9]*##/";
             $string = preg_replace($regexp, '', $string);
             $pattern = preg_replace($regexp, '', $pattern);
             if (str_contains($string, $pattern)) {
-                $string = $pattern;
+                return true;
             }
         } else if ($viewattempt == 1) {
             //echo "how can compare during view attempt<br>";
@@ -203,46 +208,61 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             //echo "viewattempt variable does not get used<br>";
             // TODO should this throw an error or a debug message?
         }
+        // Each branch below is a port of one arm of TopoMojo's QuestionSpec::IsMatch(), in
+        // GamespaceExtensions.cs: the lab is graded by that code when the student submits to
+        // TopoMojo, and by this code when Moodle grades the attempt, so the two have to agree
+        // or the same response scores differently in the two places. The matchtype numbers are
+        // the plugin's own encoding of AnswerGrader, assigned by mod_topomojo's questionmanager
+        // when it imports a challenge: 0 matchAlpha, 1 matchAll, 2 matchAny, 3 match.
+        //
+        // TopoMojo drops every space from the answer and splits it on '|' into the alternatives
+        // it will accept, so that is shared by all four.
+        $answers = self::answer_alternatives($pattern);
+        $response = trim($string);
+
         if ($matchtype == '0') {
-            //matchalpha
-            $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
-            $pattern = preg_replace('/[^A-Za-z0-9]/', '', $pattern);
-            $regexp = "|^$pattern$|u";
-            // Make the match insensitive if requested to.
-            if ($ignorecase) {
-                $regexp .= 'i';
-            }
-            return preg_match($regexp, trim($string));
+            // matchAlpha: the first alternative only, compared after dropping every character
+            // that is not an ASCII letter or digit from both sides.
+            $expected = preg_replace('/[^A-Za-z0-9]/', '', reset($answers));
+            $given = preg_replace('/[^A-Za-z0-9]/', '', $response);
+            return self::strings_equal($expected, $given, $ignorecase);
         } else if ($matchtype == '1') {
-            //match
-            $string = preg_replace('/[^A-Za-z0-9]/', '', $string);
-            $pattern = preg_replace('/[^A-Za-z0-9]/', '', $pattern);
+            // matchAll: every alternative has to appear among the words of the response, which
+            // TopoMojo splits on space, comma, semicolon, colon, pipe and tab. Extra words in
+            // the response are allowed. Comparing distinct alternatives against the response's
+            // words mirrors Intersect(), which drops duplicates: an answer that lists the same
+            // word twice cannot be satisfied there either.
+            $words = preg_split('/[ ,;:|\t]+/', $response, -1, PREG_SPLIT_NO_EMPTY);
             if ($ignorecase) {
-                $string = strtolower($string);
-                $pattern = strtolower($pattern);
+                $answers = array_map([self::class, 'fold_case'], $answers);
+                $words = array_map([self::class, 'fold_case'], $words);
             }
-            $regexp = '/[ ,;:|]/';
-            $answer = preg_split($regexp, $string);
-            $response = preg_split($regexp, $pattern);
-            $intersection = array_intersect($answer, $response);
-            if (count($intersection) == count($answer)) {
-                return true;
-            } else {
-                return false;
-            }
-        } else if ($matchtype =='2') {
-            //matchany
+            return count(array_intersect(array_unique($answers), $words)) === count($answers);
+        } else if ($matchtype == '2') {
+            // matchAny: the response, with its spaces dropped, has to equal one of the
+            // alternatives. It is not a substring test - a response that merely contains an
+            // alternative is wrong here, as it is in TopoMojo.
+            $given = str_replace(' ', '', $response);
             if ($ignorecase) {
-                $string = strtolower($string);
-                $pattern = strtolower($pattern);
+                $answers = array_map([self::class, 'fold_case'], $answers);
+                $given = self::fold_case($given);
             }
-            return str_contains($pattern, $string);
+            return in_array($given, $answers, true);
         } else if ($matchtype == '3') {
-            //match
+            // match: the first alternative only, compared whole. TopoMojo compares it for
+            // equality; Moodle has always also honoured '*' as a wildcard here, which the edit
+            // form's help documents, so that is kept - an answer without a '*' behaves exactly
+            // as TopoMojo grades it.
+            $expected = reset($answers);
+            $given = str_replace(' ', '', $response);
+
+            if (!str_contains($expected, '*')) {
+                return self::strings_equal($expected, $given, $ignorecase);
+            }
 
             // Break the string on non-escaped runs of asterisks.
             // ** is equivalent to *, but people were doing that, and with many *s it breaks preg.
-            $bits = preg_split('/(?<!\\\\)\*+/', $pattern);
+            $bits = preg_split('/(?<!\\\\)\*+/', $expected);
 
             // Escape regexp special characters in the bits.
             $escapedbits = array();
@@ -256,10 +276,43 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             if ($ignorecase) {
                 $regexp .= 'i';
             }
-            //echo "regexp $regexp<br>";
-            //echo "string $string<br>";
-            return preg_match($regexp, trim($string));
+            return preg_match($regexp, $given);
         }
+    }
+
+    /**
+     * Split a stored answer the way TopoMojo does before grading against it.
+     *
+     * @param string $answer the answer as authored or imported.
+     * @return array the alternatives it accepts, in order, with spaces dropped.
+     */
+    protected static function answer_alternatives($answer) {
+        return explode('|', str_replace(' ', '', $answer));
+    }
+
+    /**
+     * Lower-case a string for a case-insensitive comparison.
+     *
+     * @param string $string the string.
+     * @return string the string, lower-cased.
+     */
+    protected static function fold_case($string) {
+        return \core_text::strtolower($string);
+    }
+
+    /**
+     * Compare two strings, optionally ignoring case.
+     *
+     * @param string $expected the answer.
+     * @param string $given the response.
+     * @param bool $ignorecase whether case is unimportant.
+     * @return bool whether they are the same string.
+     */
+    protected static function strings_equal($expected, $given, $ignorecase) {
+        if ($ignorecase) {
+            return self::fold_case($expected) === self::fold_case($given);
+        }
+        return $expected === $given;
     }
 
     /**

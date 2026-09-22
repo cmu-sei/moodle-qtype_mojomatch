@@ -54,8 +54,16 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         $mform->setDefault('usecase', $this->get_default_value('usecase', $menu[0]));
 
 
-        $options = array(get_string('matchalpha', 'qtype_mojomatch'), get_string('matchany', 'qtype_mojomatch'),
-                        get_string('matchall', 'qtype_mojomatch'), get_string('match', 'qtype_mojomatch'));
+        // Keyed, and in the order qtype_mojomatch_question grades them and mod_topomojo's
+        // questionmanager imports them: 0 matchAlpha, 1 matchAll, 2 matchAny, 3 match. An
+        // unkeyed array took its values from its position, so the two middle labels named the
+        // other one's grader: picking MatchAny stored 1 and graded the response as MatchAll.
+        $options = [
+            '0' => get_string('matchalpha', 'qtype_mojomatch'),
+            '1' => get_string('matchall', 'qtype_mojomatch'),
+            '2' => get_string('matchany', 'qtype_mojomatch'),
+            '3' => get_string('match', 'qtype_mojomatch'),
+        ];
         $mform->addElement('select', 'matchtype', get_string('matchtype', 'qtype_mojomatch'), $options);
         $mform->setDefault('matchtype', '0');
         $mform->addHelpButton('matchtype', 'matchtype', 'qtype_mojomatch');

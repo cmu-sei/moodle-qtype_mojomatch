@@ -72,7 +72,7 @@ class qtype_mojomatch_test_helper extends question_test_helper {
         $q->generalfeedback = 'The copy command is cp.';
         $q->generalfeedbackformat = FORMAT_HTML;
         $q->usecase = false;
-        $q->matchtype = '1'; // '1' = match (exact), per compare_string_with_matchtype().
+        $q->matchtype = '3'; // '3' = match (exact), per compare_string_with_matchtype().
         $q->variant = 0;
         $q->transforms = null;
         $q->qorder = 0;
@@ -102,7 +102,7 @@ class qtype_mojomatch_test_helper extends question_test_helper {
 
         $qdata->options = new stdClass();
         $qdata->options->usecase = 0;
-        $qdata->options->matchtype = '1';
+        $qdata->options->matchtype = '3';
         $qdata->options->variant = 0;
         $qdata->options->transforms = null;
         $qdata->options->workspaceid = '';

@@ -67,11 +67,13 @@ $string['privacy:preference:usecase'] = 'Whether the answers should be case sens
 
 //added
 $string['matchtype'] = 'Match type';
-$string['matchtype_help'] = 'The type of matching to perform.';
+$string['matchtype_help'] = 'The type of matching to perform. These are the graders TopoMojo applies to a
+challenge answer, so a response is graded the same way here and in the lab. Separate alternative answers
+with a vertical bar; spaces in the answer are ignored.';
 $string['match'] = 'Match will perform an exact match of the answer string similar to a short answer.';
 $string['matchalpha'] = 'MatchAlpha will strip all characters other than alphabetic characters.';
-$string['matchany'] = 'MatchAny will check the response to a contain the answer as a substring.';
-$string['matchall'] = 'MatchAll will check a list of words to match the correct list of words.';
+$string['matchany'] = 'MatchAny will accept a response that matches any one of the answers.';
+$string['matchall'] = 'MatchAll will require every one of the answers to appear among the words of the response.';
 $string['variant'] = 'The variant of the lab that the question belongs to.';
 $string['workspaceid'] = 'The ID of the topomojo workspace.';
 $string['transforms'] = 'Whether the lab uses transforms to generate the answer during runtime.';

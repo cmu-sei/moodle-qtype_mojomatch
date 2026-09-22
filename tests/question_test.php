@@ -163,28 +163,53 @@ final class question_test extends \advanced_testcase {
      */
     public static function compare_string_with_matchtype_provider(): array {
         return [
-            // Matchtype 0, matchalpha: equality after dropping every non-alphanumeric character.
+            // Every case below is the behaviour of the TopoMojo grader the matchtype stands for,
+            // in QuestionSpec::IsMatch() (GamespaceExtensions.cs). An answer is a '|' separated
+            // list of alternatives with its spaces dropped, whichever grader reads it.
+
+            // Matchtype 0, matchAlpha: the first alternative only, compared after dropping every
+            // character that is not an ASCII letter or digit.
             'matchalpha exact' => [true, 'cp', 'cp', false, '0'],
             'matchalpha ignores punctuation' => [true, 'c-p!', 'cp', false, '0'],
+            'matchalpha keeps digits' => [true, 'flag{1234}', 'flag1234', false, '0'],
             'matchalpha case sensitive' => [false, 'CP', 'cp', false, '0'],
             'matchalpha case insensitive' => [true, 'CP', 'cp', true, '0'],
             'matchalpha wrong answer' => [false, 'mv', 'cp', true, '0'],
+            'matchalpha first alternative' => [true, 'cp', 'cp|copy', false, '0'],
+            'matchalpha ignores later alternatives' => [false, 'copy', 'cp|copy', false, '0'],
 
-            // Matchtype 1, match: same comparison as matchalpha, reached by a different code path.
-            'match exact' => [true, 'cp', 'cp', false, '1'],
-            'match ignores whitespace' => [true, ' cp ', 'cp', false, '1'],
-            'match case sensitive' => [false, 'CP', 'cp', false, '1'],
-            'match case insensitive' => [true, 'CP', 'cp', true, '1'],
-            'match wrong answer' => [false, 'copy', 'cp', true, '1'],
+            // Matchtype 1, matchAll: every alternative has to appear among the words of the
+            // response, which are split on space, comma, semicolon, colon, pipe and tab.
+            'matchall every alternative present' => [true, 'use cp then mv', 'cp|mv', false, '1'],
+            'matchall order is free' => [true, 'mv, cp', 'cp|mv', false, '1'],
+            'matchall other separators' => [true, 'cp;mv', 'cp|mv', false, '1'],
+            'matchall one alternative missing' => [false, 'use cp', 'cp|mv', false, '1'],
+            'matchall single alternative' => [true, 'copy a file with cp', 'cp', false, '1'],
+            'matchall needs a whole word' => [false, 'cpio', 'cp', false, '1'],
+            'matchall case sensitive' => [false, 'CP MV', 'cp|mv', false, '1'],
+            'matchall case insensitive' => [true, 'CP MV', 'cp|mv', true, '1'],
 
-            // Matchtype 2, matchany: the response has to be a substring of the answer, not the
-            // other way round.
-            'matchany substring of answer' => [true, 'cp', 'use cp to copy a file', false, '2'],
-            'matchany whole answer' => [true, 'cp', 'cp', false, '2'],
-            'matchany response longer than answer' => [false, 'cp file', 'cp', false, '2'],
-            'matchany case insensitive' => [true, 'CP', 'use cp to copy a file', true, '2'],
+            // Matchtype 2, matchAny: the response, with its spaces dropped, has to equal one of
+            // the alternatives.
+            'matchany first alternative' => [true, 'cp', 'cp|copy', false, '2'],
+            'matchany later alternative' => [true, 'copy', 'cp|copy', false, '2'],
+            'matchany ignores spaces in the response' => [true, 'c p', 'cp', false, '2'],
+            'matchany response carrying the answer' => [false, 'cp file', 'cp', false, '2'],
+            'matchany answer carrying the response' => [false, 'cp', 'use cp to copy a file', false, '2'],
+            'matchany case insensitive' => [true, 'CP', 'cp|copy', true, '2'],
+            'matchany wrong answer' => [false, 'mv', 'cp|copy', false, '2'],
 
-            // Matchtype 3, wildcard: * in the answer matches any run of characters.
+            // Matchtype 3, match: the first alternative, compared whole.
+            'match exact' => [true, 'cp', 'cp', false, '3'],
+            'match ignores spaces' => [true, ' c p ', 'cp', false, '3'],
+            'match ignores spaces in the answer' => [true, 'cpfile', 'cp file', false, '3'],
+            'match wrong answer' => [false, 'copy', 'cp', false, '3'],
+            'match case insensitive' => [true, 'CP', 'cp', true, '3'],
+            'match first alternative' => [false, 'copy', 'cp|copy', false, '3'],
+
+            // Matchtype 3 also honours '*' as a wildcard, which TopoMojo does not: the edit
+            // form's help has always documented it, and an answer without one is compared
+            // exactly as TopoMojo compares it.
             'wildcard leading and trailing' => [true, 'the cp command', '*cp*', false, '3'],
             'wildcard anchored' => [false, 'the cp command', 'cp*', false, '3'],
             'wildcard no match' => [false, 'the mv command', '*cp*', false, '3'],
@@ -203,10 +228,14 @@ final class question_test extends \advanced_testcase {
         $response = 'what is the ##hostname## address';
         $answer = 'the ##host## address';
 
-        // In preview, ##token## placeholders are stripped from both sides before comparing, so an
-        // answer template matches the transformed question text it came from.
-        $matched = qtype_mojomatch_question::compare_string_with_matchtype($response, $answer, false, '1', 1, 0, 1);
-        $this->assertTrue((bool)$matched);
+        // In preview, ##token## placeholders are stripped from both sides, and a response that
+        // carries what is left of the answer is accepted whatever the matchtype: only the lab
+        // can substitute the placeholders, so there is nothing to grade properly here.
+        foreach (['0', '1', '2', '3'] as $matchtype) {
+            $matched = qtype_mojomatch_question::compare_string_with_matchtype(
+                $response, $answer, false, $matchtype, 1, 0, 1);
+            $this->assertTrue((bool)$matched, "matchtype {$matchtype} should accept the answer template");
+        }
 
         // Outside preview, or with transforms off, the placeholders are compared literally.
         $matched = qtype_mojomatch_question::compare_string_with_matchtype($response, $answer, false, '1', 0, 0, 1);
