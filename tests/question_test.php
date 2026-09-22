@@ -289,6 +289,121 @@ final class question_test extends \advanced_testcase {
         $this->assertEquals([0, question_state::$gradedwrong], $question->grade_response(['answer' => 'mv']));
     }
 
+    /**
+     * Builds a gamespace challenge in the shape get_gamespace_challenge() returns it.
+     *
+     * @param string $workspaceid The gamespace's workspace.
+     * @param int $variant The 0 based variant index, as TopoMojo's GameState reports it.
+     * @param array $sections One array of [text, answer] pairs per section.
+     * @return \stdClass
+     */
+    protected function make_challenge(string $workspaceid, int $variant, array $sections): \stdClass {
+        $challenge = new \stdClass();
+        $challenge->workspaceId = $workspaceid;
+        $challenge->variant = $variant;
+        $challenge->challenge = new \stdClass();
+        $challenge->challenge->sections = [];
+
+        foreach ($sections as $questions) {
+            $section = new \stdClass();
+            $section->questions = [];
+            foreach ($questions as [$text, $answer]) {
+                $question = new \stdClass();
+                $question->text = $text;
+                $question->answer = $answer;
+                $section->questions[] = $question;
+            }
+            $challenge->challenge->sections[] = $section;
+        }
+
+        return $challenge;
+    }
+
+    /**
+     * Calls the protected resolver on a question.
+     *
+     * @param qtype_mojomatch_question $question the question doing the resolving.
+     * @param \stdClass|null $challenge the challenge to resolve against.
+     * @return \stdClass|null the matched TopoMojo question.
+     */
+    protected function find_gamespace_question($question, $challenge) {
+        return (function ($challenge) {
+            return $this->find_gamespace_question($challenge);
+        })->call($question, $challenge);
+    }
+
+    /**
+     * Makes a question that claims a known place in a known challenge.
+     *
+     * @param string $workspaceid the workspace the question was imported from.
+     * @param int $variant the 1 based variant, as qtype_mojomatch_options stores it.
+     * @param int|null $qorder the 1 based position, as qtype_mojomatch_options stores it.
+     * @return qtype_mojomatch_question
+     */
+    protected function make_imported_question(string $workspaceid, int $variant, ?int $qorder) {
+        $question = test_question_maker::make_question('mojomatch');
+        $question->workspaceid = $workspaceid;
+        $question->variant = $variant;
+        $question->qorder = $qorder;
+        return $question;
+    }
+
+    public function test_find_gamespace_question_resolves_on_workspace_variant_and_qorder(): void {
+        // The qorder counts the variant's questions flattened across its sections, so the
+        // third question is the first one of the second section.
+        $question = $this->make_imported_question('ws-1', 2, 3);
+        $challenge = $this->make_challenge('ws-1', 1, [
+            [['first', 'a'], ['second', 'b']],
+            [['third', 'c'], ['fourth', 'd']],
+        ]);
+
+        $found = $this->find_gamespace_question($question, $challenge);
+        $this->assertEquals('c', $found->answer);
+    }
+
+    public function test_find_gamespace_question_ignores_matching_question_text(): void {
+        // The regression this replaced: resolution used to be by question text, so the
+        // same text appearing at another position - across variants of one workspace, or
+        // in an unrelated challenge - handed back that question's answer. Position is
+        // what identifies the question now, and the text is not consulted at all.
+        $question = $this->make_imported_question('ws-1', 1, 1);
+        $challenge = $this->make_challenge('ws-1', 0, [
+            [['Which command copies a file?', 'cp'], ['Which command copies a file?', 'scp']],
+        ]);
+
+        $found = $this->find_gamespace_question($question, $challenge);
+        $this->assertEquals('cp', $found->answer);
+    }
+
+    public function test_find_gamespace_question_refuses_to_guess(): void {
+        $challenge = $this->make_challenge('ws-1', 0, [[['first', 'a'], ['second', 'b']]]);
+
+        // No qorder: imported before it was recorded, so the question cannot be placed.
+        $noqorder = $this->make_imported_question('ws-1', 1, null);
+        $this->assertNull($this->find_gamespace_question($noqorder, $challenge));
+        $this->assertDebuggingCalled();
+
+        // A gamespace for some other workspace.
+        $otherworkspace = $this->make_imported_question('ws-2', 1, 1);
+        $this->assertNull($this->find_gamespace_question($otherworkspace, $challenge));
+        $this->assertDebuggingCalled();
+
+        // A gamespace running a different variant. The variant is stored 1 based and
+        // TopoMojo reports it 0 based, so variant 1 here means the challenge's variant 0.
+        $othervariant = $this->make_imported_question('ws-1', 2, 1);
+        $this->assertNull($this->find_gamespace_question($othervariant, $challenge));
+        $this->assertDebuggingCalled();
+
+        // A position the challenge does not have.
+        $pasttheend = $this->make_imported_question('ws-1', 1, 3);
+        $this->assertNull($this->find_gamespace_question($pasttheend, $challenge));
+        $this->assertDebuggingCalled();
+
+        // No challenge at all, which is what an expired gamespace leaves.
+        $placeable = $this->make_imported_question('ws-1', 1, 1);
+        $this->assertNull($this->find_gamespace_question($placeable, null));
+    }
+
     public function test_grade_response_qa_falls_back_to_the_static_answer(): void {
         $this->set_pagetype('mod-topomojo-attempt');
         $question = test_question_maker::make_question('mojomatch');
