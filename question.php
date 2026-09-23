@@ -111,6 +111,54 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return $this->answers;
     }
 
+    /**
+     * Applies certificate verification and bounded request times to a TopoMojo API client.
+     *
+     * \curl - which \core\oauth2\client also extends - sets CURLOPT_SSL_VERIFYPEER to 0,
+     * so without this the API key or the bearer token goes out over a TLS connection
+     * nobody has authenticated. The answer this client fetches decides whether a student's
+     * response is graded correct, so a host that can answer for the API URL both gets the
+     * credential and picks the grade.
+     *
+     * \curl has no default CURLOPT_TIMEOUT either, and this call happens while a quiz page
+     * is being submitted, so an API that accepts the connection and then stalls holds the
+     * student's session lock until PHP-FPM gives up.
+     *
+     * mod_topomojo's locallib.php carries the same settings in
+     * topomojo_configure_api_client(). They are repeated here rather than shared because a
+     * question is graded without that file loaded, and pulling a 2,000-line locallib into
+     * question rendering to reach four cURL options would cost more than it saves.
+     *
+     * @param curl|\core\oauth2\client|null $client Client to configure, or null from a failed setup.
+     * @param bool $bearsapikey Whether the client carries the API key in a request header.
+     * @return curl|\core\oauth2\client|null The same client.
+     */
+    public static function configure_api_client($client, $bearsapikey = false) {
+        if (!$client) {
+            return $client;
+        }
+
+        $options = [
+            'CURLOPT_SSL_VERIFYPEER' => 1,
+            'CURLOPT_SSL_VERIFYHOST' => 2,
+            'CURLOPT_CONNECTTIMEOUT' => 5,
+            'CURLOPT_TIMEOUT' => 15,
+        ];
+
+        if ($bearsapikey) {
+            // Core follows up to ten redirects, and strips the request headers on a
+            // cross-host one only if they are named Authorization (lib/filelib.php). That
+            // filter does not match x-api-key, so a redirect hands the key to whichever
+            // host the response chose. The API has no reason to redirect, so a 3xx is
+            // reported to the caller as a 3xx rather than followed.
+            $options['CURLOPT_FOLLOWLOCATION'] = 0;
+        }
+
+        $client->setopt($options);
+
+        return $client;
+    }
+
     function setup() {
         if (get_config('topomojo', 'enableapikey')) {
             // Use external API key
@@ -128,7 +176,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             ];
             $client->setHeader($headers);
 
-            return $client;
+            return self::configure_api_client($client, true);
 
         } else {
             // Use OAuth2 system client
@@ -157,7 +205,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
                 return null;
             }
 
-            return $client;
+            return self::configure_api_client($client);
         }
     }
 
