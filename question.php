@@ -499,32 +499,26 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 
         $eventid = $this->get_eventid_for_attempt($qa);
         if ($eventid) {
-            debugging("Using gamespace ID from attempt record: $eventid", DEBUG_DEVELOPER);
             return get_gamespace_challenge($client, $eventid);
         }
 
-        debugging("No gamespace ID on attempt record, falling back to active gamespace search", DEBUG_DEVELOPER);
         $all_events = list_all_active_events($client);
         if (!$all_events) {
-            debugging("no events", DEBUG_DEVELOPER);
             return null;
         }
 
         $moodle_events = moodle_events($client, $all_events);
         if (!$moodle_events) {
-            debugging("no moodle events", DEBUG_DEVELOPER);
             return null;
         }
 
         $history = user_events($client, $moodle_events);
         if (!$history) {
-            debugging("no user events", DEBUG_DEVELOPER);
             return null;
         }
 
         $gamespace = get_active_event($history);
         if (!$gamespace) {
-            debugging("no active gamespace found", DEBUG_DEVELOPER);
             return null;
         }
 
@@ -656,7 +650,6 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             $all_events = list_all_active_events($client);
 
             if (!$all_events) {
-                debugging("No events found", DEBUG_DEVELOPER);
                 return null;
             }
 
@@ -665,7 +658,6 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             $gamespace = get_active_event($history);
 
             if (!$gamespace) {
-                debugging("No gamespace found for question", DEBUG_DEVELOPER);
                 return null;
             }
 
