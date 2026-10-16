@@ -69,14 +69,17 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         $mform->addHelpButton('matchtype', 'matchtype', 'qtype_mojomatch');
 
         $mform->addElement('text', 'variant', get_string('variant', 'qtype_mojomatch'));
+        $mform->setType('variant', PARAM_INT);
         $mform->setDefault('variant', '1');
         $mform->addHelpButton('variant', 'variant', 'qtype_mojomatch');
 
         $mform->addElement('text', 'transforms', get_string('transforms', 'qtype_mojomatch'));
+        $mform->setType('transforms', PARAM_INT);
         $mform->setDefault('transforms', '1');
         $mform->addHelpButton('transforms', 'transforms', 'qtype_mojomatch');
 
         $mform->addElement('text', 'workspaceid', get_string('workspaceid', 'qtype_mojomatch'));
+        $mform->setType('workspaceid', PARAM_ALPHANUMEXT);
         $mform->setDefault('workspaceid', '');
         $mform->addHelpButton('workspaceid', 'workspaceid', 'qtype_mojomatch');
 
