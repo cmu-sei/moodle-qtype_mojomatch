@@ -4,13 +4,9 @@ Feature: TopoMojo questions in the question bank
   As a teacher
   I need the TopoMojo question type to work in the question bank
 
-  # Two pages are deliberately not visited, because on a test site each one prints debugging()
-  # output for reasons that have nothing to do with what a scenario would check, and that fails
-  # the step:
-  # - the question editing form: variant, transforms and workspaceid are text fields with no
-  #   setType(), which formslib reports on every load in developer debug mode;
-  # - preview, or any attempt: rendering the question asks TopoMojo for the live answer, and with
-  #   no TopoMojo configured qtype_mojomatch_question::setup() reports the missing client.
+  # Preview, and any attempt, are deliberately not visited: rendering the question asks TopoMojo
+  # for the live answer, and with no TopoMojo configured qtype_mojomatch_question::setup()
+  # reports the missing client through debugging(), which fails the step.
 
   Background:
     Given the following "users" exist:
@@ -34,6 +30,16 @@ Feature: TopoMojo questions in the question bank
     When I am on the "Qbank 1" "core_question > question bank" page logged in as teacher
     And I press "Create a new question ..."
     Then "TopoMojo" "field" should exist in the "Choose a question type to add" "dialogue"
+
+  Scenario: The TopoMojo editing form opens from the question type chooser
+    When I am on the "Qbank 1" "core_question > question bank" page logged in as teacher
+    And I press "Create a new question ..."
+    And I set the field "item_qtype_mojomatch" to "1"
+    And I click on "Add" "button" in the "Choose a question type to add" "dialogue"
+    Then I should see "Adding a mojomatch question"
+    And the field "variant" matches value "1"
+    And the field "transforms" matches value "1"
+    And the field "workspaceid" matches value ""
 
   Scenario: A TopoMojo question is listed and found by the type filter
     When I am on the "Qbank 1" "core_question > question bank" page logged in as teacher
