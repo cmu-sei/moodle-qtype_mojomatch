@@ -113,4 +113,36 @@ class qtype_mojomatch_test_helper extends question_test_helper {
 
         return $qdata;
     }
+
+    /**
+     * The same question as {@see make_mojomatch_question_exactmatch()}, as the edit form submits it.
+     *
+     * This is what core_question_generator::create_question() saves, so it is the template the
+     * "the following "questions" exist" Behat step uses. workspaceid is NOT NULL with no default,
+     * so it has to be supplied; qorder is left out because the form never carries it.
+     *
+     * @return stdClass
+     */
+    public function get_mojomatch_question_form_data_exactmatch() {
+        $form = new stdClass();
+
+        $form->name = 'Mojomatch exact match';
+        $form->questiontext = ['text' => 'Which command copies a file?', 'format' => FORMAT_HTML];
+        $form->defaultmark = 1.0;
+        $form->generalfeedback = ['text' => 'The copy command is cp.', 'format' => FORMAT_HTML];
+        $form->penalty = 0.1;
+        $form->usecase = 0;
+        $form->matchtype = '3';
+        $form->variant = 0;
+        $form->transforms = 0;
+        $form->workspaceid = '';
+        $form->answer = ['cp'];
+        $form->fraction = ['1.0'];
+        $form->feedback = [
+            ['text' => '', 'format' => FORMAT_HTML],
+        ];
+        $form->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
+
+        return $form;
+    }
 }
