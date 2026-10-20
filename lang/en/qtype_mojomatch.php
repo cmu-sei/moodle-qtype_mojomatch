@@ -19,11 +19,11 @@ TopoMojo Question Type Plugin for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS.
+CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO,
+WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL.
 CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
-Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full 
+Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full
 terms.
 
 [DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
@@ -62,10 +62,14 @@ $string['pluginnameediting'] = 'Editing a TopoMojo question';
 $string['pluginnamesummary'] = 'Allows a response of one or a few words that is graded by comparing against various model answers, which may contain wildcards.';
 $string['privacy:metadata'] = 'TopoMojo question type plugin allows question authors to set default options as user preferences.';
 $string['privacy:preference:defaultmark'] = 'The default mark set for a given question.';
+$string['privacy:preference:matchtype'] = 'The match type TopoMojo uses to grade the answer.';
 $string['privacy:preference:penalty'] = 'The penalty for each incorrect try when questions are run using the \'Interactive with multiple tries\' or \'Adaptive mode\' behaviour.';
+$string['privacy:preference:transforms'] = 'Whether the lab uses transforms to generate the answer during runtime.';
 $string['privacy:preference:usecase'] = 'Whether the answers should be case sensitive.';
+$string['privacy:preference:variant'] = 'The variant of the lab that the question belongs to.';
+$string['privacy:preference:workspaceid'] = 'The ID of the TopoMojo workspace the question belongs to.';
 
-//added
+// Added.
 $string['matchtype'] = 'Match type';
 $string['matchtype_help'] = 'The type of matching to perform. These are the graders TopoMojo applies to a
 challenge answer, so a response is graded the same way here and in the lab. Separate alternative answers
@@ -80,5 +84,3 @@ $string['transforms'] = 'Whether the lab uses transforms to generate the answer 
 $string['variant_help'] = 'Select the specific variant of the lab this question is associated with.';
 $string['transforms_help'] = 'Enable this if the lab dynamically modifies or generates answers at runtime using transforms.';
 $string['workspaceid_help'] = 'Enter the unique identifier of the TopoMojo workspace of this lab activity.';
-
-
