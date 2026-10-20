@@ -45,7 +45,8 @@ DM24-1315
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'qtype_mojomatch';
-$plugin->version   = 2026101600;
+$plugin->version   = 2026102000;
+$plugin->release = '1.0.0';
 
 // This is a list of plugins, this plugin depends on (and their versions).
 $plugin->dependencies = [
