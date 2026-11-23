@@ -19,14 +19,15 @@ TopoMojo Question Type Plugin for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
-CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
-Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full 
-terms.
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS"
+BASIS.  CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER
+INCLUDING, BUT NOT LIMITED TO,  WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED
+FROM USE OF THE MATERIAL.  CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM
+FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT. Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June
+2007-style license, please see license.txt or contact permission@sei.cmu.edu for full  terms.
 
-[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see
+Copyright notice for non-US Government use and distribution.
 
 This Software includes and/or makes use of Third-Party Software each subject to its own license.
 
@@ -40,19 +41,30 @@ defined('MOODLE_INTERNAL') || die();
  *
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package qtype_mojomatch
  */
 
+/**
+ * Form for creating and editing mojomatch questions.
+ */
 class qtype_mojomatch_edit_form extends question_edit_form {
-
+    /**
+     * Adds the mojomatch fields to the form.
+     *
+     * @param MoodleQuickForm $mform The form being built.
+     */
     protected function definition_inner($mform) {
         $menu = [
             get_string('caseno', 'qtype_mojomatch'),
-            get_string('caseyes', 'qtype_mojomatch')
+            get_string('caseyes', 'qtype_mojomatch'),
         ];
-        $mform->addElement('select', 'usecase',
-                get_string('casesensitive', 'qtype_mojomatch'), $menu);
+        $mform->addElement(
+            'select',
+            'usecase',
+            get_string('casesensitive', 'qtype_mojomatch'),
+            $menu
+        );
         $mform->setDefault('usecase', $this->get_default_value('usecase', $menu[0]));
-
 
         // Keyed, and in the order qtype_mojomatch_question grades them and mod_topomojo's
         // questionmanager imports them: 0 matchAlpha, 1 matchAll, 2 matchAny, 3 match. An
@@ -83,21 +95,38 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         $mform->setDefault('workspaceid', '');
         $mform->addHelpButton('workspaceid', 'workspaceid', 'qtype_mojomatch');
 
-        $mform->addElement('static', 'answersinstruct',
-                get_string('correctanswers', 'qtype_mojomatch'),
-                get_string('filloutoneanswer', 'qtype_mojomatch'));
+        $mform->addElement(
+            'static',
+            'answersinstruct',
+            get_string('correctanswers', 'qtype_mojomatch'),
+            get_string('filloutoneanswer', 'qtype_mojomatch')
+        );
         $mform->closeHeaderBefore('answersinstruct');
 
-        $this->add_per_answer_fields($mform, get_string('answerno', 'qtype_mojomatch', '{no}'),
-                question_bank::fraction_options());
+        $this->add_per_answer_fields(
+            $mform,
+            get_string('answerno', 'qtype_mojomatch', '{no}'),
+            question_bank::fraction_options()
+        );
 
         $this->add_interactive_settings();
     }
 
+    /**
+     * Returns the label of the button that adds more answer fields.
+     *
+     * @return string The label.
+     */
     protected function get_more_choices_string() {
         return get_string('addmoreanswerblanks', 'qtype_mojomatch');
     }
 
+    /**
+     * Prepares the stored question data for the form, including its answers and hints.
+     *
+     * @param stdClass $question The question data.
+     * @return stdClass The prepared question data.
+     */
     protected function data_preprocessing($question) {
         $question = parent::data_preprocessing($question);
         $question = $this->data_preprocessing_answers($question);
@@ -106,6 +135,13 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         return $question;
     }
 
+    /**
+     * Checks that at least one answer is given and one earns full credit.
+     *
+     * @param array $data The submitted data.
+     * @param array $files The uploaded files.
+     * @return array The errors, keyed by form element.
+     */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
         $answers = $data['answer'];
@@ -118,13 +154,15 @@ class qtype_mojomatch_edit_form extends question_edit_form {
                 if ($data['fraction'][$key] == 1) {
                     $maxgrade = true;
                 }
-            } else if ($data['fraction'][$key] != 0 ||
-                    !html_is_blank($data['feedback'][$key]['text'])) {
+            } else if (
+                $data['fraction'][$key] != 0 ||
+                    !html_is_blank($data['feedback'][$key]['text'])
+            ) {
                 $errors["answeroptions[{$key}]"] = get_string('answermustbegiven', 'qtype_mojomatch');
                 $answercount++;
             }
         }
-        if ($answercount==0) {
+        if ($answercount == 0) {
             $errors['answeroptions[0]'] = get_string('notenoughanswers', 'qtype_mojomatch', 1);
         }
         if ($maxgrade == false) {
@@ -133,6 +171,11 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         return $errors;
     }
 
+    /**
+     * Returns the question type name.
+     *
+     * @return string The question type.
+     */
     public function qtype() {
         return 'mojomatch';
     }

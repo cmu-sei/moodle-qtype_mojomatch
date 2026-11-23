@@ -19,14 +19,15 @@ TopoMojo Question Type Plugin for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
-CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
-Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full 
-terms.
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS"
+BASIS.  CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER
+INCLUDING, BUT NOT LIMITED TO,  WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED
+FROM USE OF THE MATERIAL.  CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM
+FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT. Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June
+2007-style license, please see license.txt or contact permission@sei.cmu.edu for full  terms.
 
-[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see
+Copyright notice for non-US Government use and distribution.
 
 This Software includes and/or makes use of Third-Party Software each subject to its own license.
 
@@ -36,7 +37,7 @@ DM24-1315
 /**
  * Short-answer question type upgrade code.
  *
- * @package    qtype
+ * @package    qtype_mojomatch
  * @subpackage mojomatch
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -53,7 +54,6 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2022072201) {
-
         // Define field variant to be added to qtype_mojomatch_options.
         $table = new xmldb_table('qtype_mojomatch_options');
         $field = new xmldb_field('variant', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '1', 'matchtype');
@@ -67,7 +67,6 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2022072201, 'qtype', 'mojomatch');
     }
     if ($oldversion < 2022072202) {
-
         // Define field workspaceid to be added to qtype_mojomatch_options.
         $table = new xmldb_table('qtype_mojomatch_options');
         $field = new xmldb_field('workspaceid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '', 'variant');
@@ -89,7 +88,6 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2022072202, 'qtype', 'mojomatch');
     }
     if ($oldversion < 2022072203) {
-
         // Changing type of field workspaceid on table qtype_mojomatch_options to int.
         $table = new xmldb_table('qtype_mojomatch_options');
         $field = new xmldb_field('workspaceid', XMLDB_TYPE_TEXT, '255', null, XMLDB_NOTNULL, null, '', 'variant');
@@ -101,7 +99,6 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2022072203, 'qtype', 'mojomatch');
     }
     if ($oldversion < 2022081501) {
-
         // Define field order to be added to qtype_mojomatch_options.
         $table = new xmldb_table('qtype_mojomatch_options');
         $field = new xmldb_field('order', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'transforms');
@@ -115,7 +112,6 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2022081501, 'qtype', 'mojomatch');
     }
     if ($oldversion < 2022081600) {
-
         // Rename field order on table qtype_mojomatch_options to qorder.
         $table = new xmldb_table('qtype_mojomatch_options');
         $field = new xmldb_field('order', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'transforms');
@@ -127,7 +123,6 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2022081600, 'qtype', 'mojomatch');
     }
     if ($oldversion < 2026090500) {
-
         // Imports made before mod_topomojo 2026052601 recorded a 0-based variant on
         // imported challenge questions. The matcher compares the 1-based gamespace
         // variant against this column, so such a question can never match: the attempt
@@ -138,7 +133,6 @@ function xmldb_qtype_mojomatch_upgrade($oldversion) {
         // linked row for that activity is 0, which makes the shift unambiguous.
         // Unlinked question bank residue is left as it is.
         if ($dbman->table_exists('topomojo_questions')) {
-
             // An activity whose linked rows mix 0 and 1 or more cannot be resolved
             // without knowing which variant it serves. Report those and skip them.
             $mixed = $DB->get_fieldset_sql(

@@ -19,14 +19,15 @@ TopoMojo Question Type Plugin for Moodle
 
 Copyright 2024 Carnegie Mellon University.
 
-NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. 
-CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, 
-WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF THE MATERIAL. 
-CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT.
-Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full 
-terms.
+NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS"
+BASIS.  CARNEGIE MELLON UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, AS TO ANY MATTER
+INCLUDING, BUT NOT LIMITED TO,  WARRANTY OF FITNESS FOR PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED
+FROM USE OF THE MATERIAL.  CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF ANY KIND WITH RESPECT TO FREEDOM
+FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT. Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June
+2007-style license, please see license.txt or contact permission@sei.cmu.edu for full  terms.
 
-[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see Copyright notice for non-US Government use and distribution.
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution. Please see
+Copyright notice for non-US Government use and distribution.
 
 This Software includes and/or makes use of Third-Party Software each subject to its own license.
 
@@ -36,12 +37,11 @@ DM24-1315
 /**
  * mojomatch question definition class.
  *
- * @package    qtype
+ * @package    qtype_mojomatch
  * @subpackage mojomatch
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -53,27 +53,50 @@ require_once($CFG->dirroot . '/question/type/questionbase.php');
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_mojomatch_question extends question_graded_by_strategy
-    implements question_response_answer_comparer {
-    /** @var boolean whether answers should be graded case-sensitively. */
+class qtype_mojomatch_question extends question_graded_by_strategy implements question_response_answer_comparer {
+    /** @var bool whether answers should be graded case-sensitively. */
     public $usecase;
+
+    /** @var string|null TopoMojo workspace the question was imported from. */
     public $workspaceid;
+
+    /** @var string|int How the response is matched: 0 matchAlpha, 1 matchAll, 2 matchAny, 3 match. */
     public $matchtype;
+
+    /** @var int|string|null The lab variant the question belongs to, stored 1 based. */
     public $variant;
+
+    /** @var int|string|null Whether the lab substitutes ##token## transforms into the question and answer. */
     public $transforms;
+
+    /** @var int|string|null The question's 1 based position among all questions of the variant. */
     public $qorder;
 
     /** @var array of question_answer. */
-    public $answers = array();
+    public $answers = [];
 
+    /**
+     * Creates the question with its grading strategy.
+     */
     public function __construct() {
         parent::__construct(new mojomatch_grading_strategy($this));
     }
 
+    /**
+     * Returns the question's expected response data.
+     *
+     * @return array The expected response fields and their parameter types.
+     */
     public function get_expected_data() {
-        return array('answer' => PARAM_RAW_TRIMMED);
+        return ['answer' => PARAM_RAW_TRIMMED];
     }
 
+    /**
+     * Summarises a response as the text the student entered.
+     *
+     * @param array $response The response data.
+     * @return string|null The answer text, or null when there is none.
+     */
     public function summarise_response(array $response) {
         if (isset($response['answer'])) {
             return $response['answer'];
@@ -82,6 +105,12 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
     }
 
+    /**
+     * Rebuilds a response from its summary.
+     *
+     * @param string $summary The summary text.
+     * @return array The response data, empty when the summary is empty.
+     */
     public function un_summarise_response(string $summary) {
         if (!empty($summary)) {
             return ['answer' => $summary];
@@ -90,11 +119,23 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
     }
 
+    /**
+     * Tells whether the response carries an answer.
+     *
+     * @param array $response The response data.
+     * @return bool Whether the response is complete.
+     */
     public function is_complete_response(array $response) {
         return array_key_exists('answer', $response) &&
                 ($response['answer'] || $response['answer'] === '0');
     }
 
+    /**
+     * Returns the message shown when the response cannot be graded.
+     *
+     * @param array $response The response data.
+     * @return string The error message, empty when the response is gradable.
+     */
     public function get_validation_error(array $response) {
         if ($this->is_gradable_response($response)) {
             return '';
@@ -102,11 +143,26 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return get_string('pleaseenterananswer', 'qtype_mojomatch');
     }
 
+    /**
+     * Tells whether two responses hold the same answer.
+     *
+     * @param array $prevresponse The previous response data.
+     * @param array $newresponse The new response data.
+     * @return bool Whether the answers are the same.
+     */
     public function is_same_response(array $prevresponse, array $newresponse) {
         return question_utils::arrays_same_at_key_missing_is_blank(
-                $prevresponse, $newresponse, 'answer');
+            $prevresponse,
+            $newresponse,
+            'answer'
+        );
     }
 
+    /**
+     * Returns the answers the question accepts.
+     *
+     * @return array The question_answer objects.
+     */
     public function get_answers() {
         return $this->answers;
     }
@@ -159,9 +215,16 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return $client;
     }
 
-    function setup() {
+    /**
+     * Builds the client for the TopoMojo API from the mod_topomojo settings.
+     *
+     * Uses the API key when mod_topomojo has it enabled and the system OAuth 2 client otherwise.
+     *
+     * @return curl|\core\oauth2\client|null The configured client, or null when none can be built.
+     */
+    public function setup() {
         if (get_config('topomojo', 'enableapikey')) {
-            // Use external API key
+            // Use external API key.
             $xapikey = get_config('topomojo', 'apikey');
 
             if (empty($xapikey)) {
@@ -172,14 +235,13 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             $client = new curl();
             $headers = [
                 'x-api-key: ' . $xapikey,
-                'Content-Type: application/json'
+                'Content-Type: application/json',
             ];
             $client->setHeader($headers);
 
             return self::configure_api_client($client, true);
-
         } else {
-            // Use OAuth2 system client
+            // Use OAuth2 system client.
             if (get_config('topomojo', 'enableoauth')) {
                 $issuerid = get_config('topomojo', 'issuerid');
             }
@@ -209,11 +271,19 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
     }
 
+    /**
+     * Tells whether a response matches one of the question's answers.
+     *
+     * @param array $response The response data.
+     * @param question_answer $answer The answer to compare against.
+     * @return bool|int|null Whether the response matches; a wildcard match returns preg_match()'s 1 or 0, and an
+     *      unknown match type returns null.
+     */
     public function compare_response_with_answer(array $response, question_answer $answer) {
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
             return false;
         }
-        //echo "comparing response " . $response['answer'] . " to $answer->answer<br>";
+        // echo "comparing response " . $response['answer'] . " to $answer->answer<br>";
         $preview = 0;
         $viewattempt = 0;
         global $PAGE;
@@ -224,20 +294,56 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
 
         return self::compare_string_with_matchtype(
-                $response['answer'], $answer->answer, !$this->usecase, $this->matchtype, $preview, $viewattempt, $this->transforms);
+            $response['answer'],
+            $answer->answer,
+            !$this->usecase,
+            $this->matchtype,
+            $preview,
+            $viewattempt,
+            $this->transforms
+        );
     }
 
-    public static function compare_string_with_matchtype($string, $pattern, $ignorecase, $matchtype, $preview, $viewattempt, $transforms) {
+    /**
+     * Compares a response with an answer using the question's match type.
+     *
+     * @param string $string The response.
+     * @param string $pattern The answer.
+     * @param bool $ignorecase Whether case is unimportant.
+     * @param string|int $matchtype The match type: 0 matchAlpha, 1 matchAll, 2 matchAny, 3 match.
+     * @param int $preview Whether the question is being previewed.
+     * @param int $viewattempt Whether a finished attempt is being viewed.
+     * @param int|string|null $transforms Whether the lab uses transforms.
+     * @return bool|int|null Whether the response matches; null for an unknown match type, and a wildcard match
+     *      returns preg_match()'s 1 or 0.
+     */
+    public static function compare_string_with_matchtype(
+        $string,
+        $pattern,
+        $ignorecase,
+        $matchtype,
+        $preview,
+        $viewattempt,
+        $transforms
+    ) {
 
         if (!function_exists('str_contains')) {
-            function str_contains( $haystack, $needle) {
+            /**
+             * Fallback for PHP versions without str_contains().
+             *
+             * @param string $haystack The string to search.
+             * @param string $needle The string to look for.
+             * @return bool Whether the needle is in the haystack.
+             */
+            function str_contains($haystack, $needle) {
                 return $needle !== '' && mb_strpos($haystack, $needle) !== false;
             }
         }
 
-        //echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
+        // echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
         $pattern = self::safe_normalize($pattern);
         $string = self::safe_normalize($string);
+        // phpcs:disable Generic.CodeAnalysis.EmptyStatement.DetectedIf
         if ($transforms && $preview) {
             // The answer holds ##token## placeholders that only the lab substitutes, so a
             // preview cannot grade it properly. Accept a response that carries what is left of
@@ -251,11 +357,12 @@ class qtype_mojomatch_question extends question_graded_by_strategy
                 return true;
             }
         } else if ($viewattempt == 1) {
-            //echo "how can compare during view attempt<br>";
-            //echo "we shouldnt even be here if its already been graded<br>";
-            //echo "viewattempt variable does not get used<br>";
+            // echo "how can compare during view attempt<br>";
+            // echo "we shouldnt even be here if its already been graded<br>";
+            // echo "viewattempt variable does not get used<br>";
             // TODO should this throw an error or a debug message?
         }
+        // phpcs:enable Generic.CodeAnalysis.EmptyStatement.DetectedIf
         // Each branch below is a port of one arm of TopoMojo's QuestionSpec::IsMatch(), in
         // GamespaceExtensions.cs: the lab is graded by that code when the student submits to
         // TopoMojo, and by this code when Moodle grades the attempt, so the two have to agree
@@ -313,7 +420,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             $bits = preg_split('/(?<!\\\\)\*+/', $expected);
 
             // Escape regexp special characters in the bits.
-            $escapedbits = array();
+            $escapedbits = [];
             foreach ($bits as $bit) {
                 $escapedbits[] = preg_quote(str_replace('\*', '*', $bit), '|');
             }
@@ -388,6 +495,11 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return $normalised;
     }
 
+    /**
+     * Returns the correct response, with wildcards removed.
+     *
+     * @return array|null The correct response data, or null when there is none.
+     */
     public function get_correct_response() {
         $response = parent::get_correct_response();
         if ($response) {
@@ -396,12 +508,18 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return $response;
     }
 
+    /**
+     * Turns an answer into text a student can read, dropping its wildcards.
+     *
+     * @param string $answer The stored answer.
+     * @return string The answer with each unescaped asterisk replaced by a space.
+     */
     public function clean_response($answer) {
         // Break the string on non-escaped asterisks.
         $bits = preg_split('/(?<!\\\\)\*/', $answer);
 
         // Unescape *s in the bits.
-        $cleanbits = array();
+        $cleanbits = [];
         foreach ($bits as $bit) {
             $cleanbits[] = str_replace('\*', '*', $bit);
         }
@@ -410,20 +528,41 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return trim(implode(' ', $cleanbits));
     }
 
-    public function check_file_access($qa, $options, $component, $filearea,
-            $args, $forcedownload) {
+    /**
+     * Tells whether the user may see a file belonging to the question.
+     *
+     * @param question_attempt $qa The attempt.
+     * @param question_display_options $options The display options.
+     * @param string $component The file component.
+     * @param string $filearea The file area.
+     * @param array $args The remaining file path parts.
+     * @param bool $forcedownload Whether the file is being downloaded.
+     * @return bool Whether access is allowed.
+     */
+    public function check_file_access(
+        $qa,
+        $options,
+        $component,
+        $filearea,
+        $args,
+        $forcedownload
+    ) {
         if ($component == 'question' && $filearea == 'answerfeedback') {
             $currentanswer = $qa->get_last_qt_var('answer');
-            $answer = $this->get_matching_answer(array('answer' => $currentanswer));
+            $answer = $this->get_matching_answer(['answer' => $currentanswer]);
             $answerid = reset($args); // Itemid is answer id.
             return $options->feedback && $answer && $answerid == $answer->id;
-
         } else if ($component == 'question' && $filearea == 'hint') {
             return $this->check_hint_file_access($qa, $options, $args);
-
         } else {
-            return parent::check_file_access($qa, $options, $component, $filearea,
-                    $args, $forcedownload);
+            return parent::check_file_access(
+                $qa,
+                $options,
+                $component,
+                $filearea,
+                $args,
+                $forcedownload
+            );
         }
     }
 
@@ -440,11 +579,18 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return null;
     }
 
-    // We need mojomatch
+    // Use the mojomatch behaviour when it is installed.
+    /**
+     * Creates the question behaviour, using qbehaviour_mojomatch when it is installed.
+     *
+     * @param question_attempt $qa The attempt.
+     * @param string $preferredbehaviour The behaviour the quiz asked for.
+     * @return question_behaviour The behaviour to use.
+     */
     public function make_behaviour(question_attempt $qa, $preferredbehaviour) {
         global $CFG;
 
-        if (file_exists($CFG->dirroot.'/question/behaviour/mojomatch/')) {
+        if (file_exists($CFG->dirroot . '/question/behaviour/mojomatch/')) {
              question_engine::load_behaviour_class('mojomatch');
              return new qbehaviour_mojomatch($qa, $preferredbehaviour);
         }
@@ -452,9 +598,14 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return parent::make_behaviour($qa, $preferredbehaviour);
     }
 
+    /**
+     * Returns the summary of the right answer.
+     *
+     * @return string|null The summary, or null when there is no right answer.
+     */
     public function get_right_answer_summary() {
         $answer = parent::get_right_answer_summary();
-        
+
         // parent calls
         /*
             $correctresponse = $this->get_correct_response();
@@ -463,10 +614,10 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
         return $this->summarise_response($correctresponse);
         */
-        //which calls
-        //$answer = $this->get_correct_answer();
-        //which calls
-        //return $this->gradingstrategy->get_correct_answer();
+        // which calls
+        // $answer = $this->get_correct_answer();
+        // which calls
+        // return $this->gradingstrategy->get_correct_answer();
 
         return $answer;
     }
@@ -502,17 +653,17 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             return get_gamespace_challenge($client, $eventid);
         }
 
-        $all_events = list_all_active_events($client);
-        if (!$all_events) {
+        $allevents = list_all_active_events($client);
+        if (!$allevents) {
             return null;
         }
 
-        $moodle_events = moodle_events($client, $all_events);
-        if (!$moodle_events) {
+        $moodleevents = moodle_events($client, $allevents);
+        if (!$moodleevents) {
             return null;
         }
 
-        $history = user_events($client, $moodle_events);
+        $history = user_events($client, $moodleevents);
         if (!$history) {
             return null;
         }
@@ -647,14 +798,14 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             require_once("$CFG->dirroot/mod/topomojo/locallib.php");
 
             $client = $this->setup();
-            $all_events = list_all_active_events($client);
+            $allevents = list_all_active_events($client);
 
-            if (!$all_events) {
+            if (!$allevents) {
                 return null;
             }
 
-            $moodle_events = moodle_events($client, $all_events);
-            $history = user_events($client, $moodle_events);
+            $moodleevents = moodle_events($client, $allevents);
+            $history = user_events($client, $moodleevents);
             $gamespace = get_active_event($history);
 
             if (!$gamespace) {
@@ -670,16 +821,30 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
 
         return $challenge->challenge->sections[0]->questions[$index]->text;
-    }           
+    }
 
+    /**
+     * Grades a response against a single answer.
+     *
+     * @param array $response The response data.
+     * @param question_answer $rightanswer The answer to grade against.
+     * @return question_answer|null The answer when the response matches, otherwise null.
+     */
     public function grade_attempt(array $response, question_answer $rightanswer) {
-        //echo "we are inside of grade_attempt<br>";
+        // echo "we are inside of grade_attempt<br>";
         if ($this->compare_response_with_answer($response, $rightanswer)) {
             return $rightanswer;
         }
         return null;
     }
 
+    /**
+     * Grades a response, using the answer TopoMojo holds for the attempt when there is one.
+     *
+     * @param array $response The response data.
+     * @param question_attempt $qa The attempt being graded.
+     * @return array The fraction and the question state.
+     */
     public function grade_response_qa(array $response, question_attempt $qa) {
         $answers = $this->get_answers();
         if (count($answers) !== 1) {
@@ -698,22 +863,25 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
 
         $rightanswer = reset($answers);
-        $live_answer = $this->get_rightanswer_topomojo($qa);
-        if ($live_answer) {
-            $rightanswer->answer = $live_answer;
+        $liveanswer = $this->get_rightanswer_topomojo($qa);
+        if ($liveanswer) {
+            $rightanswer->answer = $liveanswer;
         }
 
         $answer = $this->grade_attempt($response, $rightanswer);
         if ($answer) {
-            return array($answer->fraction,
-                    question_state::graded_state_for_fraction($answer->fraction));
+            return [$answer->fraction,
+                    question_state::graded_state_for_fraction($answer->fraction)];
         } else {
-            return array(0, question_state::$gradedwrong);
+            return [0, question_state::$gradedwrong];
         }
     }
-
 }
 
+// phpcs:disable PSR1.Classes.ClassDeclaration.MultipleClasses
+/**
+ * Grading strategy that compares a response with every answer through the question.
+ */
 class mojomatch_grading_strategy extends question_first_matching_answer_grading_strategy {
     /**
      * @var question_response_answer_comparer (presumably also a
@@ -722,6 +890,8 @@ class mojomatch_grading_strategy extends question_first_matching_answer_grading_
     protected $question;
 
     /**
+     * Creates the strategy for a question.
+     *
      * @param question_response_answer_comparer $question (presumably also a
      * {@link question_definition}) the question we are doing the grading for.
      */
@@ -729,8 +899,14 @@ class mojomatch_grading_strategy extends question_first_matching_answer_grading_
         $this->question = $question;
     }
 
+    /**
+     * Returns the first answer the response matches.
+     *
+     * @param array $response The response data.
+     * @return question_answer|null The matching answer with its id set, or null.
+     */
     public function grade(array $response) {
-        //echo "we are inside of grade<br>";
+        // echo "we are inside of grade<br>";
         global $PAGE;
         foreach ($this->question->get_answers() as $aid => $answer) {
             if ($this->question->compare_response_with_answer($response, $answer)) {
@@ -742,8 +918,13 @@ class mojomatch_grading_strategy extends question_first_matching_answer_grading_
     }
 
 
+    /**
+     * Returns the first answer that earns full credit.
+     *
+     * @return question_answer|null The answer, or null when there is none.
+     */
     public function get_correct_answer() {
-        //echo "get_correct_answer<Br>";
+        // echo "get_correct_answer<Br>";
         foreach ($this->question->get_answers() as $answer) {
             $state = question_state::graded_state_for_fraction($answer->fraction);
             if ($state == question_state::$gradedright) {
@@ -753,3 +934,4 @@ class mojomatch_grading_strategy extends question_first_matching_answer_grading_
         return null;
     }
 }
+// phpcs:enable PSR1.Classes.ClassDeclaration.MultipleClasses
