@@ -276,7 +276,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
      *
      * @param array $response The response data.
      * @param question_answer $answer The answer to compare against.
-     * @return bool Whether the response matches.
+     * @return bool|int Whether the response matches; a wildcard match returns preg_match()'s 1 or 0.
      */
     public function compare_response_with_answer(array $response, question_answer $answer) {
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
@@ -313,7 +313,8 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
      * @param int $preview Whether the question is being previewed.
      * @param int $viewattempt Whether a finished attempt is being viewed.
      * @param int|string|null $transforms Whether the lab uses transforms.
-     * @return bool|int Whether the response matches.
+     * @return bool|int|null Whether the response matches; null for an unknown match type, and a wildcard match
+     *      returns preg_match()'s 1 or 0.
      */
     public static function compare_string_with_matchtype(
         $string,
