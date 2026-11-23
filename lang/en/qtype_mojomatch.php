@@ -53,6 +53,14 @@ $string['caseyes'] = 'Yes, case must match';
 $string['correctansweris'] = 'The correct answer is: {$a}';
 $string['correctanswers'] = 'Correct answers';
 $string['filloutoneanswer'] = 'You must provide at least one possible answer. Answers left blank will not be used. \'*\' can be used as a wildcard to match any characters. The first matching answer will be used to determine the score and feedback.';
+$string['match'] = 'Match will perform an exact match of the answer string similar to a short answer.';
+$string['matchall'] = 'MatchAll will require every one of the answers to appear among the words of the response.';
+$string['matchalpha'] = 'MatchAlpha will strip all characters other than alphabetic characters.';
+$string['matchany'] = 'MatchAny will accept a response that matches any one of the answers.';
+$string['matchtype'] = 'Match type';
+$string['matchtype_help'] = 'The type of matching to perform. These are the graders TopoMojo applies to a
+challenge answer, so a response is graded the same way here and in the lab. Separate alternative answers
+with a vertical bar; spaces in the answer are ignored.';
 $string['notenoughanswers'] = 'This type of question requires at least {$a} answers';
 $string['pleaseenterananswer'] = 'Please enter an answer.';
 $string['pluginname'] = 'TopoMojo';
@@ -69,19 +77,9 @@ $string['privacy:preference:transforms'] = 'Whether the lab uses transforms to g
 $string['privacy:preference:usecase'] = 'Whether the answers should be case sensitive.';
 $string['privacy:preference:variant'] = 'The variant of the lab that the question belongs to.';
 $string['privacy:preference:workspaceid'] = 'The ID of the TopoMojo workspace the question belongs to.';
-
-// Added.
-$string['matchtype'] = 'Match type';
-$string['matchtype_help'] = 'The type of matching to perform. These are the graders TopoMojo applies to a
-challenge answer, so a response is graded the same way here and in the lab. Separate alternative answers
-with a vertical bar; spaces in the answer are ignored.';
-$string['match'] = 'Match will perform an exact match of the answer string similar to a short answer.';
-$string['matchalpha'] = 'MatchAlpha will strip all characters other than alphabetic characters.';
-$string['matchany'] = 'MatchAny will accept a response that matches any one of the answers.';
-$string['matchall'] = 'MatchAll will require every one of the answers to appear among the words of the response.';
-$string['variant'] = 'The variant of the lab that the question belongs to.';
-$string['workspaceid'] = 'The ID of the topomojo workspace.';
 $string['transforms'] = 'Whether the lab uses transforms to generate the answer during runtime.';
-$string['variant_help'] = 'Select the specific variant of the lab this question is associated with.';
 $string['transforms_help'] = 'Enable this if the lab dynamically modifies or generates answers at runtime using transforms.';
+$string['variant'] = 'The variant of the lab that the question belongs to.';
+$string['variant_help'] = 'Select the specific variant of the lab this question is associated with.';
+$string['workspaceid'] = 'The ID of the topomojo workspace.';
 $string['workspaceid_help'] = 'Enter the unique identifier of the TopoMojo workspace of this lab activity.';
