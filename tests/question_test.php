@@ -253,6 +253,33 @@ final class question_test extends \advanced_testcase {
         $this->assertFalse((bool)$matched);
     }
 
+    public function test_compare_string_with_matchtype_placeholder_only_answer_in_preview(): void {
+        // An answer made only of placeholders is left empty once they are stripped, and every
+        // response contains an empty string. That is on purpose: only the lab knows what the
+        // placeholders stand for, so a teacher previewing the question cannot be expected to type
+        // the real value, and any response shows the question in its answered state. The matchtype
+        // does not matter in preview, so each one is tried to show the shortcut applies to all. An
+        // empty response never gets here: test_is_complete_response() shows it is stopped before grading.
+        foreach (['0', '1', '2', '3'] as $matchtype) {
+            foreach (['anything at all', '10.0.0.1', '##hostname##'] as $response) {
+                $matched = qtype_mojomatch_question::compare_string_with_matchtype(
+                    $response,
+                    '##host##',
+                    false,
+                    $matchtype,
+                    1,
+                    0,
+                    1
+                );
+                $this->assertTrue((bool)$matched, "matchtype {$matchtype} should accept '{$response}' in preview");
+            }
+        }
+
+        // Outside preview the placeholder is compared literally, so the same answer needs the placeholder itself.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('anything', '##host##', false, '3', 0, 0, 1);
+        $this->assertFalse((bool)$matched);
+    }
+
     public function test_compare_response_with_answer(): void {
         $this->set_pagetype('mod-topomojo-attempt');
         $question = test_question_maker::make_question('mojomatch');
