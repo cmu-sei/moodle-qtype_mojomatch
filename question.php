@@ -276,7 +276,8 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
      *
      * @param array $response The response data.
      * @param question_answer $answer The answer to compare against.
-     * @return bool|int Whether the response matches; a wildcard match returns preg_match()'s 1 or 0.
+     * @return bool|int|null Whether the response matches; a wildcard match returns preg_match()'s 1 or 0, and an
+     *      unknown match type returns null.
      */
     public function compare_response_with_answer(array $response, question_answer $answer) {
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
@@ -375,13 +376,13 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
         $response = trim($string);
 
         if ($matchtype == '0') {
-            // MatchAlpha: the first alternative only, compared after dropping every character
+            // matchAlpha: the first alternative only, compared after dropping every character
             // that is not an ASCII letter or digit from both sides.
             $expected = preg_replace('/[^A-Za-z0-9]/', '', reset($answers));
             $given = preg_replace('/[^A-Za-z0-9]/', '', $response);
             return self::strings_equal($expected, $given, $ignorecase);
         } else if ($matchtype == '1') {
-            // MatchAll: every alternative has to appear among the words of the response, which
+            // matchAll: every alternative has to appear among the words of the response, which
             // TopoMojo splits on space, comma, semicolon, colon, pipe and tab. Extra words in
             // the response are allowed. Comparing distinct alternatives against the response's
             // words mirrors Intersect(), which drops duplicates: an answer that lists the same
@@ -393,7 +394,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
             }
             return count(array_intersect(array_unique($answers), $words)) === count($answers);
         } else if ($matchtype == '2') {
-            // MatchAny: the response, with its spaces dropped, has to equal one of the
+            // matchAny: the response, with its spaces dropped, has to equal one of the
             // alternatives. It is not a substring test - a response that merely contains an
             // alternative is wrong here, as it is in TopoMojo.
             $given = str_replace(' ', '', $response);
@@ -403,7 +404,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
             }
             return in_array($given, $answers, true);
         } else if ($matchtype == '3') {
-            // Match: the first alternative only, compared whole. TopoMojo compares it for
+            // match: the first alternative only, compared whole. TopoMojo compares it for
             // equality; Moodle has always also honoured '*' as a wildcard here, which the edit
             // form's help documents, so that is kept - an answer without a '*' behaves exactly
             // as TopoMojo grades it.
