@@ -51,6 +51,11 @@ defined('MOODLE_INTERNAL') || die();
  * @package qtype_mojomatch
  */
 class qtype_mojomatch_test_helper extends question_test_helper {
+    /**
+     * Returns the names of the test questions this helper makes.
+     *
+     * @return array The question names.
+     */
     public function get_test_questions() {
         return ['exactmatch'];
     }

@@ -45,7 +45,17 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+/**
+ * Renders mojomatch questions as a text input, showing the live TopoMojo answer and transformed text when there are any.
+ */
 class qtype_mojomatch_renderer extends qtype_renderer {
+    /**
+     * Generates the question text and the answer input.
+     *
+     * @param question_attempt $qa The attempt being displayed.
+     * @param question_display_options $options The display options.
+     * @return string The HTML for the question.
+     */
     public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
         $question = $qa->get_question();
         $currentanswer = $qa->get_last_qt_var('answer');
@@ -63,18 +73,18 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             $inputattributes['readonly'] = 'readonly';
         }
 
-        // Fetch original question text
-        $original_question_text = $question->format_questiontext($qa);
+        // Fetch original question text.
+        $originalquestiontext = $question->format_questiontext($qa);
 
-        // Check if the question has a transform pattern
-        $has_transform_pattern = preg_match('/##[a-zA-Z_0-9]+##/', $original_question_text);
+        // Check if the question has a transform pattern.
+        $hastransformpattern = preg_match('/##[a-zA-Z_0-9]+##/', $originalquestiontext);
 
-        if ($has_transform_pattern) {
-            $question_index = $qa->get_slot() - 1;
-            $transformed_question_text = $question->get_transformed_question_topomojo($question_index, $qa);
-            $questiontext = $transformed_question_text ? $transformed_question_text : $original_question_text;
+        if ($hastransformpattern) {
+            $questionindex = $qa->get_slot() - 1;
+            $transformedquestiontext = $question->get_transformed_question_topomojo($questionindex, $qa);
+            $questiontext = $transformedquestiontext ? $transformedquestiontext : $originalquestiontext;
         } else {
-            $questiontext = $original_question_text;
+            $questiontext = $originalquestiontext;
         }
 
         // Only a question with a single answer has one answer for the live TopoMojo
@@ -85,9 +95,9 @@ class qtype_mojomatch_renderer extends qtype_renderer {
         $answers = $question->get_answers();
         if (count($answers) === 1) {
             $rightanswer = reset($answers);
-            $live_answer = $question->get_rightanswer_topomojo($qa);
-            if ($live_answer) {
-                $rightanswer->answer = $live_answer;
+            $liveanswer = $question->get_rightanswer_topomojo($qa);
+            if ($liveanswer) {
+                $rightanswer->answer = $liveanswer;
             }
         } else {
             debugging(
@@ -97,7 +107,7 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             );
         }
 
-        // Handling feedback image for both original and transformed answers
+        // Handling feedback image for both original and transformed answers.
         $feedbackimg = '';
         if ($options->correctness) {
             if ($rightanswer) {
@@ -110,7 +120,7 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             $feedbackimg = $this->feedback_image($fraction);
         }
 
-        // Placeholder and input handling
+        // Placeholder and input handling.
         $placeholder = false;
         if (preg_match('/_____+/', $questiontext, $matches)) {
             $placeholder = $matches[0];
@@ -160,6 +170,12 @@ class qtype_mojomatch_renderer extends qtype_renderer {
         return $result;
     }
 
+    /**
+     * Generates the feedback for the answer the student gave.
+     *
+     * @param question_attempt $qa The attempt being displayed.
+     * @return string The feedback HTML.
+     */
     public function specific_feedback(question_attempt $qa) {
         // echo "specific_feedback<br>";
         $question = $qa->get_question();
@@ -178,11 +194,17 @@ class qtype_mojomatch_renderer extends qtype_renderer {
         );
     }
 
+    /**
+     * Generates the sentence that gives the correct answer.
+     *
+     * @param question_attempt $qa The attempt being displayed.
+     * @return string The correct answer text, using the live TopoMojo answer when there is one.
+     */
     public function correct_response(question_attempt $qa) {
         $question = $qa->get_question();
-        $live_answer = $question->get_rightanswer_topomojo($qa);
-        if ($live_answer) {
-            return get_string('correctansweris', 'qtype_mojomatch', s($live_answer));
+        $liveanswer = $question->get_rightanswer_topomojo($qa);
+        if ($liveanswer) {
+            return get_string('correctansweris', 'qtype_mojomatch', s($liveanswer));
         }
         $answer = $question->get_matching_answer($question->get_correct_response());
         if (!$answer) {

@@ -47,7 +47,15 @@ defined('MOODLE_INTERNAL') || die();
  * @package qtype_mojomatch
  */
 
+/**
+ * Converts the old-engine attempt data of mojomatch questions to the new question engine.
+ */
 class qtype_mojomatch_qe2_attempt_updater extends question_qtype_attempt_updater {
+    /**
+     * Returns the text of the answer that earns full credit.
+     *
+     * @return string|null The answer text, or null when none does.
+     */
     public function right_answer() {
         foreach ($this->question->options->answers as $ans) {
             if ($ans->fraction > 0.999) {
@@ -56,10 +64,22 @@ class qtype_mojomatch_qe2_attempt_updater extends question_qtype_attempt_updater
         }
     }
 
+    /**
+     * Tells whether the old state holds an answer.
+     *
+     * @param stdClass $state The old question state.
+     * @return bool Whether an answer was given.
+     */
     public function was_answered($state) {
         return !empty($state->answer);
     }
 
+    /**
+     * Returns the answer the old state holds.
+     *
+     * @param stdClass $state The old question state.
+     * @return string|null The answer, or null when none was given.
+     */
     public function response_summary($state) {
         if (!empty($state->answer)) {
             return $state->answer;
@@ -68,12 +88,29 @@ class qtype_mojomatch_qe2_attempt_updater extends question_qtype_attempt_updater
         }
     }
 
+    /**
+     * Sets the data of the first step; mojomatch has none.
+     *
+     * @param stdClass $state The old question state.
+     * @param array $data The step data, left unchanged.
+     */
     public function set_first_step_data_elements($state, &$data) {
     }
 
+    /**
+     * Supplies missing first step data; mojomatch has none.
+     *
+     * @param array $data The step data, left unchanged.
+     */
     public function supply_missing_first_step_data(&$data) {
     }
 
+    /**
+     * Sets the answer in the data of a step.
+     *
+     * @param stdClass $state The old question state.
+     * @param array $data The step data, to which the answer is added.
+     */
     public function set_data_elements_for_step($state, &$data) {
         if (!empty($state->answer)) {
             $data['answer'] = $state->answer;

@@ -35,6 +35,8 @@ DM24-1315
 */
 
 /**
+ * Conversion of mojomatch questions from the Moodle 1 backup format.
+ *
  * @package    qtype_mojomatch
  * @subpackage mojomatch
  * @copyright  2024 Carnegie Mellon University
@@ -48,7 +50,9 @@ defined('MOODLE_INTERNAL') || die();
  */
 class moodle1_qtype_mojomatch_handler extends moodle1_qtype_handler {
     /**
-     * @return array
+     * Returns the paths of the elements that make up a mojomatch question.
+     *
+     * @return array The sub-paths of the question element.
      */
     public function get_question_subpaths() {
         return [

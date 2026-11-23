@@ -44,7 +44,15 @@ defined('MOODLE_INTERNAL') || die();
  * @package qtype_mojomatch
  */
 
+/**
+ * Form for creating and editing mojomatch questions.
+ */
 class qtype_mojomatch_edit_form extends question_edit_form {
+    /**
+     * Adds the mojomatch fields to the form.
+     *
+     * @param MoodleQuickForm $mform The form being built.
+     */
     protected function definition_inner($mform) {
         $menu = [
             get_string('caseno', 'qtype_mojomatch'),
@@ -104,10 +112,21 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         $this->add_interactive_settings();
     }
 
+    /**
+     * Returns the label of the button that adds more answer fields.
+     *
+     * @return string The label.
+     */
     protected function get_more_choices_string() {
         return get_string('addmoreanswerblanks', 'qtype_mojomatch');
     }
 
+    /**
+     * Prepares the stored question data for the form, including its answers and hints.
+     *
+     * @param stdClass $question The question data.
+     * @return stdClass The prepared question data.
+     */
     protected function data_preprocessing($question) {
         $question = parent::data_preprocessing($question);
         $question = $this->data_preprocessing_answers($question);
@@ -116,6 +135,13 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         return $question;
     }
 
+    /**
+     * Checks that at least one answer is given and one earns full credit.
+     *
+     * @param array $data The submitted data.
+     * @param array $files The uploaded files.
+     * @return array The errors, keyed by form element.
+     */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
         $answers = $data['answer'];
@@ -145,6 +171,11 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         return $errors;
     }
 
+    /**
+     * Returns the question type name.
+     *
+     * @return string The question type.
+     */
     public function qtype() {
         return 'mojomatch';
     }

@@ -57,22 +57,45 @@ require_once($CFG->dirroot . '/question/type/mojomatch/question.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_mojomatch extends question_type {
+    /**
+     * Returns the options table and the extra fields stored in it.
+     *
+     * @return array The table name followed by its field names.
+     */
     public function extra_question_fields() {
         return ['qtype_mojomatch_options', 'usecase', 'matchtype', 'variant', 'transforms', 'workspaceid', 'qorder'];
     }
 
+    /**
+     * Moves the question's files, including those in answers and hints, to another context.
+     *
+     * @param int $questionid The question id.
+     * @param int $oldcontextid The context the files are in.
+     * @param int $newcontextid The context to move them to.
+     */
     public function move_files($questionid, $oldcontextid, $newcontextid) {
         parent::move_files($questionid, $oldcontextid, $newcontextid);
         $this->move_files_in_answers($questionid, $oldcontextid, $newcontextid);
         $this->move_files_in_hints($questionid, $oldcontextid, $newcontextid);
     }
 
+    /**
+     * Deletes the question's files, including those in answers and hints.
+     *
+     * @param int $questionid The question id.
+     * @param int $contextid The context the files are in.
+     */
     protected function delete_files($questionid, $contextid) {
         parent::delete_files($questionid, $contextid);
         $this->delete_files_in_answers($questionid, $contextid);
         $this->delete_files_in_hints($questionid, $contextid);
     }
 
+    /**
+     * Saves the authoring options as the defaults for new questions.
+     *
+     * @param stdClass $fromform The data submitted by the edit form.
+     */
     public function save_defaults_for_new_questions(stdClass $fromform): void {
         parent::save_defaults_for_new_questions($fromform);
 
@@ -90,6 +113,12 @@ class qtype_mojomatch extends question_type {
         }
     }
 
+    /**
+     * Saves the question's options, answers and hints.
+     *
+     * @param stdClass $question The question data from the edit form.
+     * @return stdClass|null An object with an error property when no answer has full credit.
+     */
     public function save_question_options($question) {
         global $DB;
         $result = new stdClass();
@@ -113,17 +142,38 @@ class qtype_mojomatch extends question_type {
         $this->save_hints($question);
     }
 
+    /**
+     * Prepares an answer record for saving, trimming its text.
+     *
+     * @param stdClass $answer The answer record.
+     * @param stdClass $questiondata The question data from the edit form.
+     * @param int $key The index of the answer.
+     * @param context $context The question's context.
+     * @return stdClass The answer record.
+     */
     protected function fill_answer_fields($answer, $questiondata, $key, $context) {
         $answer = parent::fill_answer_fields($answer, $questiondata, $key, $context);
         $answer->answer = trim($answer->answer);
         return $answer;
     }
 
+    /**
+     * Fills a question object from its stored data, including its answers.
+     *
+     * @param question_definition $question The question object to fill.
+     * @param stdClass $questiondata The stored question data.
+     */
     protected function initialise_question_instance(question_definition $question, $questiondata) {
         parent::initialise_question_instance($question, $questiondata);
         $this->initialise_question_answers($question, $questiondata);
     }
 
+    /**
+     * Returns the score a random guess would get.
+     *
+     * @param stdClass $questiondata The stored question data.
+     * @return float The fraction of the answer that is a lone asterisk, or 0 when there is none.
+     */
     public function get_random_guess_score($questiondata) {
         foreach ($questiondata->options->answers as $aid => $answer) {
             if ('*' == trim($answer->answer)) {
@@ -133,6 +183,12 @@ class qtype_mojomatch extends question_type {
         return 0;
     }
 
+    /**
+     * Lists the responses a student could give, for the quiz statistics.
+     *
+     * @param stdClass $questiondata The stored question data.
+     * @return array The possible responses, keyed by question id.
+     */
     public function get_possible_responses($questiondata) {
         $responses = [];
 
