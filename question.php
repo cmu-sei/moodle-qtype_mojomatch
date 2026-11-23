@@ -327,19 +327,6 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
         $transforms
     ) {
 
-        if (!function_exists('str_contains')) {
-            /**
-             * Fallback for PHP versions without str_contains().
-             *
-             * @param string $haystack The string to search.
-             * @param string $needle The string to look for.
-             * @return bool Whether the needle is in the haystack.
-             */
-            function str_contains($haystack, $needle) {
-                return $needle !== '' && mb_strpos($haystack, $needle) !== false;
-            }
-        }
-
         // echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
         $pattern = self::safe_normalize($pattern);
         $string = self::safe_normalize($string);
