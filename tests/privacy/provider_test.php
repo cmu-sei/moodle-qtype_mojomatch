@@ -57,7 +57,6 @@ require_once($CFG->dirroot . '/question/type/mojomatch/questiontype.php');
  */
 #[CoversClass(provider::class)]
 final class provider_test extends \core_privacy\tests\provider_testcase {
-
     /**
      * Every preference the edit form saves is declared in the metadata.
      */
@@ -129,8 +128,10 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         $preferences = (array) $writer->get_user_preferences('qtype_mojomatch');
         $this->assertEquals([$name], array_keys($preferences));
         $this->assertEquals($expected, $preferences[$name]->value);
-        $this->assertEquals(get_string("privacy:preference:$name", 'qtype_mojomatch'),
-            $preferences[$name]->description);
+        $this->assertEquals(
+            get_string("privacy:preference:$name", 'qtype_mojomatch'),
+            $preferences[$name]->description
+        );
     }
 
     /**

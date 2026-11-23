@@ -43,7 +43,6 @@ DM24-1315
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
 defined('MOODLE_INTERNAL') || die();
 
 
@@ -60,7 +59,7 @@ defined('MOODLE_INTERNAL') || die();
  * @param array $options additional options affecting the file serving
  * @return bool
  */
-function qtype_mojomatch_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=array()) {
+function qtype_mojomatch_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options = []) {
     global $DB, $CFG;
     require_once($CFG->libdir . '/questionlib.php');
     question_pluginfile($course, $context, 'qtype_mojomatch', $filearea, $args, $forcedownload, $options);

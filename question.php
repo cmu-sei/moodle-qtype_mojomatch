@@ -37,12 +37,11 @@ DM24-1315
 /**
  * mojomatch question definition class.
  *
- * @package    qtype
+ * @package    qtype_mojomatch
  * @subpackage mojomatch
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -54,9 +53,8 @@ require_once($CFG->dirroot . '/question/type/questionbase.php');
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_mojomatch_question extends question_graded_by_strategy
-    implements question_response_answer_comparer {
-    /** @var boolean whether answers should be graded case-sensitively. */
+class qtype_mojomatch_question extends question_graded_by_strategy implements question_response_answer_comparer {
+    /** @var bool whether answers should be graded case-sensitively. */
     public $usecase;
     public $workspaceid;
     public $matchtype;
@@ -65,14 +63,14 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     public $qorder;
 
     /** @var array of question_answer. */
-    public $answers = array();
+    public $answers = [];
 
     public function __construct() {
         parent::__construct(new mojomatch_grading_strategy($this));
     }
 
     public function get_expected_data() {
-        return array('answer' => PARAM_RAW_TRIMMED);
+        return ['answer' => PARAM_RAW_TRIMMED];
     }
 
     public function summarise_response(array $response) {
@@ -105,7 +103,10 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 
     public function is_same_response(array $prevresponse, array $newresponse) {
         return question_utils::arrays_same_at_key_missing_is_blank(
-                $prevresponse, $newresponse, 'answer');
+            $prevresponse,
+            $newresponse,
+            'answer'
+        );
     }
 
     public function get_answers() {
@@ -173,12 +174,11 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             $client = new curl();
             $headers = [
                 'x-api-key: ' . $xapikey,
-                'Content-Type: application/json'
+                'Content-Type: application/json',
             ];
             $client->setHeader($headers);
 
             return self::configure_api_client($client, true);
-
         } else {
             // Use OAuth2 system client
             if (get_config('topomojo', 'enableoauth')) {
@@ -214,7 +214,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         if (!array_key_exists('answer', $response) || is_null($response['answer'])) {
             return false;
         }
-        //echo "comparing response " . $response['answer'] . " to $answer->answer<br>";
+        // echo "comparing response " . $response['answer'] . " to $answer->answer<br>";
         $preview = 0;
         $viewattempt = 0;
         global $PAGE;
@@ -225,18 +225,25 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
 
         return self::compare_string_with_matchtype(
-                $response['answer'], $answer->answer, !$this->usecase, $this->matchtype, $preview, $viewattempt, $this->transforms);
+            $response['answer'],
+            $answer->answer,
+            !$this->usecase,
+            $this->matchtype,
+            $preview,
+            $viewattempt,
+            $this->transforms
+        );
     }
 
     public static function compare_string_with_matchtype($string, $pattern, $ignorecase, $matchtype, $preview, $viewattempt, $transforms) {
 
         if (!function_exists('str_contains')) {
-            function str_contains( $haystack, $needle) {
+            function str_contains($haystack, $needle) {
                 return $needle !== '' && mb_strpos($haystack, $needle) !== false;
             }
         }
 
-        //echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
+        // echo "compare_string_with_matchtype $string $pattern $matchtype<br>";
         $pattern = self::safe_normalize($pattern);
         $string = self::safe_normalize($string);
         if ($transforms && $preview) {
@@ -252,9 +259,9 @@ class qtype_mojomatch_question extends question_graded_by_strategy
                 return true;
             }
         } else if ($viewattempt == 1) {
-            //echo "how can compare during view attempt<br>";
-            //echo "we shouldnt even be here if its already been graded<br>";
-            //echo "viewattempt variable does not get used<br>";
+            // echo "how can compare during view attempt<br>";
+            // echo "we shouldnt even be here if its already been graded<br>";
+            // echo "viewattempt variable does not get used<br>";
             // TODO should this throw an error or a debug message?
         }
         // Each branch below is a port of one arm of TopoMojo's QuestionSpec::IsMatch(), in
@@ -314,7 +321,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
             $bits = preg_split('/(?<!\\\\)\*+/', $expected);
 
             // Escape regexp special characters in the bits.
-            $escapedbits = array();
+            $escapedbits = [];
             foreach ($bits as $bit) {
                 $escapedbits[] = preg_quote(str_replace('\*', '*', $bit), '|');
             }
@@ -402,7 +409,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         $bits = preg_split('/(?<!\\\\)\*/', $answer);
 
         // Unescape *s in the bits.
-        $cleanbits = array();
+        $cleanbits = [];
         foreach ($bits as $bit) {
             $cleanbits[] = str_replace('\*', '*', $bit);
         }
@@ -411,20 +418,30 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         return trim(implode(' ', $cleanbits));
     }
 
-    public function check_file_access($qa, $options, $component, $filearea,
-            $args, $forcedownload) {
+    public function check_file_access(
+        $qa,
+        $options,
+        $component,
+        $filearea,
+        $args,
+        $forcedownload
+    ) {
         if ($component == 'question' && $filearea == 'answerfeedback') {
             $currentanswer = $qa->get_last_qt_var('answer');
-            $answer = $this->get_matching_answer(array('answer' => $currentanswer));
+            $answer = $this->get_matching_answer(['answer' => $currentanswer]);
             $answerid = reset($args); // Itemid is answer id.
             return $options->feedback && $answer && $answerid == $answer->id;
-
         } else if ($component == 'question' && $filearea == 'hint') {
             return $this->check_hint_file_access($qa, $options, $args);
-
         } else {
-            return parent::check_file_access($qa, $options, $component, $filearea,
-                    $args, $forcedownload);
+            return parent::check_file_access(
+                $qa,
+                $options,
+                $component,
+                $filearea,
+                $args,
+                $forcedownload
+            );
         }
     }
 
@@ -445,7 +462,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
     public function make_behaviour(question_attempt $qa, $preferredbehaviour) {
         global $CFG;
 
-        if (file_exists($CFG->dirroot.'/question/behaviour/mojomatch/')) {
+        if (file_exists($CFG->dirroot . '/question/behaviour/mojomatch/')) {
              question_engine::load_behaviour_class('mojomatch');
              return new qbehaviour_mojomatch($qa, $preferredbehaviour);
         }
@@ -455,7 +472,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 
     public function get_right_answer_summary() {
         $answer = parent::get_right_answer_summary();
-        
+
         // parent calls
         /*
             $correctresponse = $this->get_correct_response();
@@ -464,10 +481,10 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
         return $this->summarise_response($correctresponse);
         */
-        //which calls
-        //$answer = $this->get_correct_answer();
-        //which calls
-        //return $this->gradingstrategy->get_correct_answer();
+        // which calls
+        // $answer = $this->get_correct_answer();
+        // which calls
+        // return $this->gradingstrategy->get_correct_answer();
 
         return $answer;
     }
@@ -671,10 +688,10 @@ class qtype_mojomatch_question extends question_graded_by_strategy
         }
 
         return $challenge->challenge->sections[0]->questions[$index]->text;
-    }           
+    }
 
     public function grade_attempt(array $response, question_answer $rightanswer) {
-        //echo "we are inside of grade_attempt<br>";
+        // echo "we are inside of grade_attempt<br>";
         if ($this->compare_response_with_answer($response, $rightanswer)) {
             return $rightanswer;
         }
@@ -706,13 +723,12 @@ class qtype_mojomatch_question extends question_graded_by_strategy
 
         $answer = $this->grade_attempt($response, $rightanswer);
         if ($answer) {
-            return array($answer->fraction,
-                    question_state::graded_state_for_fraction($answer->fraction));
+            return [$answer->fraction,
+                    question_state::graded_state_for_fraction($answer->fraction)];
         } else {
-            return array(0, question_state::$gradedwrong);
+            return [0, question_state::$gradedwrong];
         }
     }
-
 }
 
 class mojomatch_grading_strategy extends question_first_matching_answer_grading_strategy {
@@ -731,7 +747,7 @@ class mojomatch_grading_strategy extends question_first_matching_answer_grading_
     }
 
     public function grade(array $response) {
-        //echo "we are inside of grade<br>";
+        // echo "we are inside of grade<br>";
         global $PAGE;
         foreach ($this->question->get_answers() as $aid => $answer) {
             if ($this->question->compare_response_with_answer($response, $answer)) {
@@ -744,7 +760,7 @@ class mojomatch_grading_strategy extends question_first_matching_answer_grading_
 
 
     public function get_correct_answer() {
-        //echo "get_correct_answer<Br>";
+        // echo "get_correct_answer<Br>";
         foreach ($this->question->get_answers() as $answer) {
             $state = question_state::graded_state_for_fraction($answer->fraction);
             if ($state == question_state::$gradedright) {

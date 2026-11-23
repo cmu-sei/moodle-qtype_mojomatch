@@ -39,7 +39,7 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * mojomatch question renderer class.
  *
- * @package    qtype
+ * @package    qtype_mojomatch
  * @subpackage mojomatch
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -50,25 +50,25 @@ class qtype_mojomatch_renderer extends qtype_renderer {
         $question = $qa->get_question();
         $currentanswer = $qa->get_last_qt_var('answer');
         $inputname = $qa->get_qt_field_name('answer');
-        $inputattributes = array(
+        $inputattributes = [
             'type' => 'text',
             'name' => $inputname,
             'value' => $currentanswer,
             'id' => $inputname,
             'size' => 80,
             'class' => 'form-control d-inline',
-        );
-    
+        ];
+
         if ($options->readonly) {
             $inputattributes['readonly'] = 'readonly';
         }
-    
+
         // Fetch original question text
         $original_question_text = $question->format_questiontext($qa);
-    
+
         // Check if the question has a transform pattern
         $has_transform_pattern = preg_match('/##[a-zA-Z_0-9]+##/', $original_question_text);
-    
+
         if ($has_transform_pattern) {
             $question_index = $qa->get_slot() - 1;
             $transformed_question_text = $question->get_transformed_question_topomojo($question_index, $qa);
@@ -101,15 +101,15 @@ class qtype_mojomatch_renderer extends qtype_renderer {
         $feedbackimg = '';
         if ($options->correctness) {
             if ($rightanswer) {
-                $answer = $question->grade_attempt(array('answer' => $currentanswer), $rightanswer);
+                $answer = $question->grade_attempt(['answer' => $currentanswer], $rightanswer);
                 $fraction = $answer ? $answer->fraction : 0;
             } else {
-                [$fraction] = $question->grade_response(array('answer' => $currentanswer));
+                [$fraction] = $question->grade_response(['answer' => $currentanswer]);
             }
             $inputattributes['class'] .= ' ' . $this->feedback_class($fraction);
             $feedbackimg = $this->feedback_image($fraction);
         }
-    
+
         // Placeholder and input handling
         $placeholder = false;
         if (preg_match('/_____+/', $questiontext, $matches)) {
@@ -117,44 +117,65 @@ class qtype_mojomatch_renderer extends qtype_renderer {
             $inputattributes['size'] = round(strlen($placeholder) * 1.1);
         }
         $input = html_writer::empty_tag('input', $inputattributes);
-    
+
         if ($placeholder) {
-            $inputinplace = html_writer::tag('label', get_string('answer'),
-                    array('for' => $inputattributes['id'], 'class' => 'accesshide'));
+            $inputinplace = html_writer::tag(
+                'label',
+                get_string('answer'),
+                ['for' => $inputattributes['id'], 'class' => 'accesshide']
+            );
             $inputinplace .= $input;
-            $questiontext = substr_replace($questiontext, $inputinplace,
-                    strpos($questiontext, $placeholder), strlen($placeholder));
+            $questiontext = substr_replace(
+                $questiontext,
+                $inputinplace,
+                strpos($questiontext, $placeholder),
+                strlen($placeholder)
+            );
         }
-    
-        $result = html_writer::tag('div', $questiontext, array('class' => 'qtext'));
-    
+
+        $result = html_writer::tag('div', $questiontext, ['class' => 'qtext']);
+
         if (!$placeholder) {
-            $result .= html_writer::start_tag('div', array('class' => 'ablock form-inline'));
-            $result .= html_writer::tag('label', get_string('answer', 'qtype_mojomatch',
-                    html_writer::tag('span', $input, array('class' => 'answer'))),
-                    array('for' => $inputattributes['id']));
+            $result .= html_writer::start_tag('div', ['class' => 'ablock form-inline']);
+            $result .= html_writer::tag(
+                'label',
+                get_string(
+                    'answer',
+                    'qtype_mojomatch',
+                    html_writer::tag('span', $input, ['class' => 'answer'])
+                ),
+                ['for' => $inputattributes['id']]
+            );
             $result .= html_writer::end_tag('div');
         }
-    
+
         if ($qa->get_state() == question_state::$invalid) {
-            $result .= html_writer::nonempty_tag('div',
-                    $question->get_validation_error(array('answer' => $currentanswer)),
-                    array('class' => 'validationerror'));
+            $result .= html_writer::nonempty_tag(
+                'div',
+                $question->get_validation_error(['answer' => $currentanswer]),
+                ['class' => 'validationerror']
+            );
         }
-    
+
         return $result;
-    }           
+    }
 
     public function specific_feedback(question_attempt $qa) {
-       //echo "specific_feedback<br>";
-       $question = $qa->get_question();
-       $answer = $question->get_matching_answer(array('answer' => $qa->get_last_qt_var('answer')));
-       //$answer = $question->get_matching_answer(array('answer' => "decrypt_files_##FUNCTIONFLAG##"));
-       if (!$answer || !$answer->feedback) {
+        // echo "specific_feedback<br>";
+        $question = $qa->get_question();
+        $answer = $question->get_matching_answer(['answer' => $qa->get_last_qt_var('answer')]);
+        // $answer = $question->get_matching_answer(array('answer' => "decrypt_files_##FUNCTIONFLAG##"));
+        if (!$answer || !$answer->feedback) {
             return '';
         }
-        return $question->format_text($answer->feedback, $answer->feedbackformat,
-                $qa, 'question', 'answerfeedback', $answer->id);
+        return $question->format_text(
+            $answer->feedback,
+            $answer->feedbackformat,
+            $qa,
+            'question',
+            'answerfeedback',
+            $answer->id
+        );
     }
 
     public function correct_response(question_attempt $qa) {
@@ -167,7 +188,10 @@ class qtype_mojomatch_renderer extends qtype_renderer {
         if (!$answer) {
             return '';
         }
-        return get_string('correctansweris', 'qtype_mojomatch',
-                s($answer->answer));
+        return get_string(
+            'correctansweris',
+            'qtype_mojomatch',
+            s($answer->answer)
+        );
     }
 }

@@ -37,7 +37,7 @@ DM24-1315
 /**
  * mojomatch question type version information.
  *
- * @package    qtype
+ * @package    qtype_mojomatch
  * @subpackage mojomatch
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

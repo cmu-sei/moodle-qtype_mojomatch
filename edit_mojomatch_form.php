@@ -41,19 +41,22 @@ defined('MOODLE_INTERNAL') || die();
  *
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package qtype_mojomatch
  */
 
 class qtype_mojomatch_edit_form extends question_edit_form {
-
     protected function definition_inner($mform) {
         $menu = [
             get_string('caseno', 'qtype_mojomatch'),
-            get_string('caseyes', 'qtype_mojomatch')
+            get_string('caseyes', 'qtype_mojomatch'),
         ];
-        $mform->addElement('select', 'usecase',
-                get_string('casesensitive', 'qtype_mojomatch'), $menu);
+        $mform->addElement(
+            'select',
+            'usecase',
+            get_string('casesensitive', 'qtype_mojomatch'),
+            $menu
+        );
         $mform->setDefault('usecase', $this->get_default_value('usecase', $menu[0]));
-
 
         // Keyed, and in the order qtype_mojomatch_question grades them and mod_topomojo's
         // questionmanager imports them: 0 matchAlpha, 1 matchAll, 2 matchAny, 3 match. An
@@ -84,13 +87,19 @@ class qtype_mojomatch_edit_form extends question_edit_form {
         $mform->setDefault('workspaceid', '');
         $mform->addHelpButton('workspaceid', 'workspaceid', 'qtype_mojomatch');
 
-        $mform->addElement('static', 'answersinstruct',
-                get_string('correctanswers', 'qtype_mojomatch'),
-                get_string('filloutoneanswer', 'qtype_mojomatch'));
+        $mform->addElement(
+            'static',
+            'answersinstruct',
+            get_string('correctanswers', 'qtype_mojomatch'),
+            get_string('filloutoneanswer', 'qtype_mojomatch')
+        );
         $mform->closeHeaderBefore('answersinstruct');
 
-        $this->add_per_answer_fields($mform, get_string('answerno', 'qtype_mojomatch', '{no}'),
-                question_bank::fraction_options());
+        $this->add_per_answer_fields(
+            $mform,
+            get_string('answerno', 'qtype_mojomatch', '{no}'),
+            question_bank::fraction_options()
+        );
 
         $this->add_interactive_settings();
     }
@@ -119,13 +128,15 @@ class qtype_mojomatch_edit_form extends question_edit_form {
                 if ($data['fraction'][$key] == 1) {
                     $maxgrade = true;
                 }
-            } else if ($data['fraction'][$key] != 0 ||
-                    !html_is_blank($data['feedback'][$key]['text'])) {
+            } else if (
+                $data['fraction'][$key] != 0 ||
+                    !html_is_blank($data['feedback'][$key]['text'])
+            ) {
                 $errors["answeroptions[{$key}]"] = get_string('answermustbegiven', 'qtype_mojomatch');
                 $answercount++;
             }
         }
-        if ($answercount==0) {
+        if ($answercount == 0) {
             $errors['answeroptions[0]'] = get_string('notenoughanswers', 'qtype_mojomatch', 1);
         }
         if ($maxgrade == false) {

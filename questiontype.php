@@ -26,7 +26,7 @@ FROM USE OF THE MATERIAL.  CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY
 FROM PATENT, TRADEMARK, OR COPYRIGHT INFRINGEMENT. Licensed under a GNU GENERAL PUBLIC LICENSE - Version 3, 29 June
 2007-style license, please see license.txt or contact permission@sei.cmu.edu for full  terms.
 
-[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution.  
+[DISTRIBUTION STATEMENT A] This material has been approved for public release and unlimited distribution.
 Please see Copyright notice for non-US Government use and distribution.
 
 This Software includes and/or makes use of Third-Party Software each subject to its own license.
@@ -37,12 +37,11 @@ DM24-1315
 /**
  * Question type class for the mojomatch question type.
  *
- * @package    qtype
+ * @package    qtype_mojomatch
  * @subpackage mojomatch
  * @copyright  1999 onwards Martin Dougiamas  {@link http://moodle.com}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -58,9 +57,8 @@ require_once($CFG->dirroot . '/question/type/mojomatch/question.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_mojomatch extends question_type {
-
     public function extra_question_fields() {
-        return array('qtype_mojomatch_options', 'usecase', 'matchtype', 'variant', 'transforms', 'workspaceid', 'qorder');
+        return ['qtype_mojomatch_options', 'usecase', 'matchtype', 'variant', 'transforms', 'workspaceid', 'qorder'];
     }
 
     public function move_files($questionid, $oldcontextid, $newcontextid) {
@@ -122,7 +120,7 @@ class qtype_mojomatch extends question_type {
     }
 
     protected function initialise_question_instance(question_definition $question, $questiondata) {
-	parent::initialise_question_instance($question, $questiondata);
+        parent::initialise_question_instance($question, $questiondata);
         $this->initialise_question_answers($question, $questiondata);
     }
 
@@ -136,12 +134,14 @@ class qtype_mojomatch extends question_type {
     }
 
     public function get_possible_responses($questiondata) {
-        $responses = array();
+        $responses = [];
 
         $starfound = false;
         foreach ($questiondata->options->answers as $aid => $answer) {
-            $responses[$aid] = new question_possible_response($answer->answer,
-                    $answer->fraction);
+            $responses[$aid] = new question_possible_response(
+                $answer->answer,
+                $answer->fraction
+            );
             if ($answer->answer === '*') {
                 $starfound = true;
             }
@@ -149,11 +149,13 @@ class qtype_mojomatch extends question_type {
 
         if (!$starfound) {
             $responses[0] = new question_possible_response(
-                    get_string('didnotmatchanyanswer', 'question'), 0);
+                get_string('didnotmatchanyanswer', 'question'),
+                0
+            );
         }
 
         $responses[null] = question_possible_response::no_response();
 
-        return array($questiondata->id => $responses);
+        return [$questiondata->id => $responses];
     }
 }

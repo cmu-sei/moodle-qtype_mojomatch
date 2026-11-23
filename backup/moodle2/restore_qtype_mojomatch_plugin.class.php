@@ -37,6 +37,7 @@ DM24-1315
 /**
  * @copyright  2024 Carngegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package qtype_mojomatch
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -50,6 +51,7 @@ require_once($CFG->dirroot . '/backup/moodle2/restore_qtype_extrafields_plugin.c
  *
  * @copyright  2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package qtype_mojomatch
  */
 class restore_qtype_mojomatch_plugin extends restore_qtype_extrafields_plugin {
     /**

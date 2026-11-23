@@ -234,7 +234,14 @@ final class question_test extends \advanced_testcase {
         // can substitute the placeholders, so there is nothing to grade properly here.
         foreach (['0', '1', '2', '3'] as $matchtype) {
             $matched = qtype_mojomatch_question::compare_string_with_matchtype(
-                $response, $answer, false, $matchtype, 1, 0, 1);
+                $response,
+                $answer,
+                false,
+                $matchtype,
+                1,
+                0,
+                1
+            );
             $this->assertTrue((bool)$matched, "matchtype {$matchtype} should accept the answer template");
         }
 

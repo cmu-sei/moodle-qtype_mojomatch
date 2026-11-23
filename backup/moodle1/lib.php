@@ -35,7 +35,7 @@ DM24-1315
 */
 
 /**
- * @package    qtype
+ * @package    qtype_mojomatch
  * @subpackage mojomatch
  * @copyright  2024 Carnegie Mellon University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -47,15 +47,14 @@ defined('MOODLE_INTERNAL') || die();
  * mojomatch question type conversion handler
  */
 class moodle1_qtype_mojomatch_handler extends moodle1_qtype_handler {
-
     /**
      * @return array
      */
     public function get_question_subpaths() {
-        return array(
+        return [
             'ANSWERS/ANSWER',
             'MOJOMATCH',
-        );
+        ];
     }
 
     /**
@@ -71,7 +70,7 @@ class moodle1_qtype_mojomatch_handler extends moodle1_qtype_handler {
         // Convert and write the mojomatch extra fields.
         foreach ($data['mojomatch'] as $mojomatch) {
             $mojomatch['id'] = $this->converter->get_nextid();
-            $this->write_xml('mojomatch', $mojomatch, array('/mojomatch/id'));
+            $this->write_xml('mojomatch', $mojomatch, ['/mojomatch/id']);
         }
     }
 }
