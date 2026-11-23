@@ -340,6 +340,8 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
             $regexp = "/##[a-zA-Z0-9]*##/";
             $string = preg_replace($regexp, '', $string);
             $pattern = preg_replace($regexp, '', $pattern);
+            // An answer made only of placeholders is empty here, so every response matches. That
+            // is intended: nobody previewing can know what the lab substitutes.
             if (str_contains($string, $pattern)) {
                 return true;
             }
