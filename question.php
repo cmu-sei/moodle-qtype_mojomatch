@@ -341,20 +341,36 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
             // the spaces from the answer and the response. matchAlpha and match compare the first
             // alternative against the whole response, matchAny any alternative against the whole
             // response, and matchAll needs every alternative among the response. This checks
-            // the shape only: matchAlpha's dropping of punctuation and match's '*' wildcard are
-            // left to the lab. An answer without placeholders is graded like any other, below.
+            // the shape only: matchAll does not look for word boundaries, as the values are
+            // unknown. MatchAlpha drops punctuation and match reads '*' as a wildcard, as they
+            // do below. An answer without placeholders is graded like any other, below.
             $placeholder = '(?:##[a-zA-Z0-9_]*##)+';
-            if (preg_match('/' . $placeholder . '/', $pattern)) {
-                $alternatives = array_filter(self::answer_alternatives($pattern), 'strlen');
-                if ($matchtype == '0' || $matchtype == '3') {
-                    $alternatives = array_slice($alternatives, 0, 1);
+            // The alternatives the lab would use: matchAlpha and match only look at the first.
+            $alternatives = self::answer_alternatives($pattern);
+            if ($matchtype == '0' || $matchtype == '3') {
+                $alternatives = array_slice($alternatives, 0, 1);
+            }
+            $alternatives = array_filter($alternatives, 'strlen');
+            $hasplaceholder = false;
+            foreach ($alternatives as $alternative) {
+                $hasplaceholder = $hasplaceholder || preg_match('/' . $placeholder . '/', $alternative);
+            }
+            if ($hasplaceholder) {
+                // The lab trims the response before grading it.
+                $given = str_replace(' ', '', trim($string));
+                if ($matchtype == '0') {
+                    $given = preg_replace('/[^A-Za-z0-9]/', '', $given);
                 }
-                $given = str_replace(' ', '', $string);
                 $whole = $matchtype != '1';
                 foreach ($alternatives as $alternative) {
                     $parts = preg_split('/' . $placeholder . '/', $alternative);
-                    $regexp = implode('\s*\S.*', array_map(function ($part) {
-                        return preg_quote($part, '/');
+                    $regexp = implode('\s*\S.*', array_map(function ($part) use ($matchtype) {
+                        if ($matchtype == '0') {
+                            $part = preg_replace('/[^A-Za-z0-9]/', '', $part);
+                        }
+                        $part = preg_quote($part, '/');
+                        // The '*' wildcard of matchtype 3.
+                        return $matchtype == '3' ? str_replace('\*', '.*', $part) : $part;
                     }, $parts));
                     $regexp = '/' . ($whole ? '^' . $regexp . '\z' : $regexp) . '/su' . ($ignorecase ? 'i' : '');
                     $found = preg_match($regexp, $given) === 1;
@@ -365,13 +381,10 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
                         return false;
                     }
                 }
-                // matchAll needed every alternative and found them all, unless there were none.
-                if ($matchtype == '1' && $alternatives) {
-                    return true;
-                }
-                // Final: falling through would grade the answer with its placeholders still in
-                // it, and could accept a response with no value.
-                return false;
+                // MatchAll needed every alternative and found them all, unless there were none.
+                // Anything else is final: falling through would grade the answer with its
+                // placeholders still in it, and could accept a response with no value.
+                return $matchtype == '1' && $alternatives;
             }
         } else if ($viewattempt == 1) {
             // echo "how can compare during view attempt<br>";

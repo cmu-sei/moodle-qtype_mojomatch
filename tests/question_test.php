@@ -343,6 +343,26 @@ final class question_test extends \advanced_testcase {
         $matched = qtype_mojomatch_question::compare_string_with_matchtype("ping\t", 'ping ##v##', true, '3', 1, 0, 1);
         $this->assertFalse((bool)$matched);
 
+        // The response is trimmed as the lab trims it.
+        foreach (["ping 10.0.0.5\n", "\nping 10.0.0.5", "  ping 10.0.0.5  "] as $response) {
+            $matched = qtype_mojomatch_question::compare_string_with_matchtype($response, 'ping ##host##', true, '3', 1, 0, 1);
+            $this->assertTrue((bool)$matched, $response);
+        }
+
+        // Match reads '*' as a wildcard around the value, and matchAlpha ignores punctuation.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('ping fast 10.0.0.5', 'ping *##host##', true, '3', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('ping 10.0.0.5', 'ping-##host##', true, '0', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('pong 10.0.0.5', 'ping-##host##', true, '0', 1, 0, 1);
+        $this->assertFalse((bool)$matched);
+
+        // A placeholder in an alternative the lab ignores does not change how the first one is graded.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('cp', 'c-p|##v##', true, '0', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('copy', 'co*|##v##', true, '3', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
+
         // An answer without placeholders is graded as usual, '|' alternatives included (matchAny).
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('b', 'a|b', true, '2', 1, 0, 1);
         $this->assertTrue((bool)$matched);
