@@ -334,20 +334,30 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
         if ($transforms && $preview) {
             // An answer with ##token## placeholders holds values that the lab replaces per
             // gamespace, so a preview cannot know the value the real grading will expect. Stand in
-            // for it: each placeholder accepts any non-empty text, and the literal text around it
-            // has to be there, whatever the matchtype. A response with nothing where the value
-            // goes is then rejected, as it would be in the lab. An answer made only of
-            // placeholders becomes '.+', so every non-blank response matches: nobody previewing
-            // can know what the lab substitutes. The answer's '|' alternatives are tried in turn.
-            // An answer without placeholders is graded like any other, below.
-            $placeholder = '(?:##[a-zA-Z0-9]*##)+';
+            // for it: each placeholder accepts any non-blank text, and the literal text around it
+            // has to be there. A response with nothing where the value goes is then rejected, as
+            // it would be in the lab. An answer made only of placeholders accepts every non-blank
+            // response: nobody previewing can know what the lab substitutes. Like the lab, drop
+            // the spaces from the answer and the response. matchAlpha and match compare the first
+            // alternative against the whole response, matchAny any alternative against the whole
+            // response, and matchAll looks for each alternative among the response. This checks
+            // the shape only: matchAlpha's dropping of punctuation and match's '*' wildcard are
+            // left to the lab. An answer without placeholders is graded like any other, below.
+            $placeholder = '(?:##[a-zA-Z0-9_]*##)+';
             if (preg_match('/' . $placeholder . '/', $pattern)) {
-                foreach (explode('|', $pattern) as $alternative) {
+                $alternatives = array_filter(self::answer_alternatives($pattern), 'strlen');
+                if ($matchtype == '0' || $matchtype == '3') {
+                    $alternatives = array_slice($alternatives, 0, 1);
+                }
+                $given = str_replace(' ', '', $string);
+                $whole = $matchtype != '1';
+                foreach ($alternatives as $alternative) {
                     $parts = preg_split('/' . $placeholder . '/', $alternative);
-                    $regexp = '/' . implode('.+', array_map(function ($part) {
+                    $regexp = implode('\S.*', array_map(function ($part) {
                         return preg_quote($part, '/');
-                    }, $parts)) . '/su' . ($ignorecase ? 'i' : '');
-                    if (preg_match($regexp, $string) === 1) {
+                    }, $parts));
+                    $regexp = '/' . ($whole ? '^' . $regexp . '\z' : $regexp) . '/su' . ($ignorecase ? 'i' : '');
+                    if (preg_match($regexp, $given) === 1) {
                         return true;
                     }
                 }

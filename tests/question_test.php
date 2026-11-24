@@ -226,7 +226,7 @@ final class question_test extends \advanced_testcase {
     }
 
     public function test_compare_string_with_matchtype_transforms_in_preview(): void {
-        $response = 'what is the ##hostname## address';
+        $response = 'the 10.0.0.5 address';
         $answer = 'the ##host## address';
 
         // In preview each ##token## placeholder accepts any non-empty text, and a response that
@@ -255,14 +255,18 @@ final class question_test extends \advanced_testcase {
 
     public function test_compare_string_with_matchtype_placeholder_needs_a_value_in_preview(): void {
         // The lab replaces the placeholder with a value, so a response with nothing in its place is
-        // wrong there, and in preview. The literal text around it still has to match.
+        // wrong there, and in preview. The literal text around it still has to match, and so does
+        // the rest of the response: matchtype 3 compares the whole of it.
         $cases = [
             ['ping 10.0.0.5', true],
             ['ping ##host##', true],
             ['PING 10.0.0.5', true],
+            ['ping10.0.0.5', true],
             ['ping', false],
             ['ping ', false],
+            ['ping   ', false],
             ['pong 10.0.0.5', false],
+            ['please ping 10.0.0.5', false],
         ];
         foreach ($cases as [$response, $expected]) {
             $matched = qtype_mojomatch_question::compare_string_with_matchtype(
@@ -277,11 +281,10 @@ final class question_test extends \advanced_testcase {
             $this->assertSame($expected, (bool)$matched, "'{$response}'");
         }
 
-        // A response that lacks the value is rejected whatever the matchtype: nothing falls through
-        // to the matchtype comparison, which would drop the punctuation and accept 'pinghost'.
+        // A response that lacks the value is rejected whatever the matchtype.
         foreach (['0', '1', '2', '3'] as $matchtype) {
             $matched = qtype_mojomatch_question::compare_string_with_matchtype(
-                'pinghost',
+                'ping',
                 'ping ##host##',
                 true,
                 $matchtype,
@@ -292,21 +295,41 @@ final class question_test extends \advanced_testcase {
             $this->assertFalse((bool)$matched, "matchtype {$matchtype}");
         }
 
-        // Neighbouring placeholders are one value; regex characters in the answer are literal; the
-        // value may span lines; case folding covers non-ASCII letters.
+        // Neighbouring placeholders are one value, regex characters in the answer are literal, the
+        // value may span lines, case folding covers non-ASCII letters, and the lab's names for
+        // list values carry an underscore and an index.
         $cases = [
             ['x', '##a####b##', true],
             ['a.c 1', 'a.c ##v##', true],
             ['abc 1', 'a.c ##v##', false],
             ["x a\nb end", 'x ##v## end', true],
             ['ÉCOLE 1', 'école ##v##', true],
-            ['b 2', 'a ##v##|b ##v##', true],
-            ['c 2', 'a ##v##|b ##v##', false],
+            ['one', '##key_1##', true],
+            ['1 two', '##key_1## two', true],
         ];
         foreach ($cases as [$response, $answer, $expected]) {
             $matched = qtype_mojomatch_question::compare_string_with_matchtype($response, $answer, true, '3', 1, 0, 1);
             $this->assertSame($expected, (bool)$matched, "'{$response}' against '{$answer}'");
         }
+
+        // The alternatives: matchAny takes any of them, matchAlpha and match only the first, and an
+        // empty one (a stray '|') never accepts everything.
+        $cases = [
+            ['b 2', 'a ##v##|b ##v##', '2', true],
+            ['c 2', 'a ##v##|b ##v##', '2', false],
+            ['b 2', 'a ##v##|b ##v##', '3', false],
+            ['pong', 'ping ##host##|', '2', false],
+            ['pong', '|ping ##host##||', '2', false],
+            ['ping 1', '|ping ##host##||', '2', true],
+        ];
+        foreach ($cases as [$response, $answer, $matchtype, $expected]) {
+            $matched = qtype_mojomatch_question::compare_string_with_matchtype($response, $answer, true, $matchtype, 1, 0, 1);
+            $this->assertSame($expected, (bool)$matched, "'{$response}' against '{$answer}' matchtype {$matchtype}");
+        }
+
+        // matchAll looks for the answer among the words of the response, so extra words are allowed.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('well ping 1 now', 'ping ##v##', true, '1', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
 
         // An answer without placeholders is graded as usual, '|' alternatives included (matchAny).
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('b', 'a|b', true, '2', 1, 0, 1);
@@ -342,6 +365,12 @@ final class question_test extends \advanced_testcase {
             }
         }
 
+        // A blank response is still nothing, even though any other text is accepted.
+        foreach (['0', '1', '2', '3'] as $matchtype) {
+            $matched = qtype_mojomatch_question::compare_string_with_matchtype('   ', '##host##', false, $matchtype, 1, 0, 1);
+            $this->assertFalse((bool)$matched, "matchtype {$matchtype} should reject a blank response");
+        }
+
         // Outside preview the placeholder is compared literally, so the same answer needs the placeholder itself.
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('anything', '##host##', false, '3', 0, 0, 1);
         $this->assertFalse((bool)$matched);
@@ -365,7 +394,7 @@ final class question_test extends \advanced_testcase {
         $question = test_question_maker::make_question('mojomatch');
         $question->transforms = 1;
         $answer = new question_answer(14, 'the ##host## address', 1.0, '', FORMAT_HTML);
-        $response = ['answer' => 'what is the ##hostname## address'];
+        $response = ['answer' => 'the 10.0.0.5 address'];
 
         $this->set_pagetype('question-bank-previewquestion-preview');
         $this->assertTrue($question->compare_response_with_answer($response, $answer));
