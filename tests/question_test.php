@@ -350,7 +350,15 @@ final class question_test extends \advanced_testcase {
         }
 
         // Match reads '*' as a wildcard around the value, and matchAlpha ignores punctuation.
-        $matched = qtype_mojomatch_question::compare_string_with_matchtype('ping fast 10.0.0.5', 'ping *##host##', true, '3', 1, 0, 1);
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype(
+            'ping fast 10.0.0.5',
+            'ping *##host##',
+            true,
+            '3',
+            1,
+            0,
+            1
+        );
         $this->assertTrue((bool)$matched);
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('ping 10.0.0.5', 'ping-##host##', true, '0', 1, 0, 1);
         $this->assertTrue((bool)$matched);
