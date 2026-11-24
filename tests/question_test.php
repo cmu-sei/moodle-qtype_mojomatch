@@ -308,8 +308,8 @@ final class question_test extends \advanced_testcase {
             $this->assertSame($expected, (bool)$matched, "'{$response}' against '{$answer}'");
         }
 
-        // An answer without placeholders is graded as usual, '|' alternatives included.
-        $matched = qtype_mojomatch_question::compare_string_with_matchtype('b', 'a|b', true, '3', 1, 0, 1);
+        // An answer without placeholders is graded as usual, '|' alternatives included (matchAny).
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('b', 'a|b', true, '2', 1, 0, 1);
         $this->assertTrue((bool)$matched);
 
         // A finished attempt being viewed is graded literally, not as a preview.
