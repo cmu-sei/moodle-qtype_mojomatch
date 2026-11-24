@@ -332,18 +332,64 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
         $string = self::safe_normalize($string);
         // phpcs:disable Generic.CodeAnalysis.EmptyStatement.DetectedIf
         if ($transforms && $preview) {
-            // The answer holds ##token## placeholders that only the lab substitutes, so a
-            // preview cannot grade it properly. Accept a response that carries what is left of
-            // the answer once the placeholders are dropped, whatever the matchtype: replacing
-            // the response with the answer here, as this used to, only happened to pass because
-            // every comparison below then compared the answer with itself.
-            $regexp = "/##[a-zA-Z0-9]*##/";
-            $string = preg_replace($regexp, '', $string);
-            $pattern = preg_replace($regexp, '', $pattern);
-            // An answer made only of placeholders is empty here, so every response matches. That
-            // is intended: nobody previewing can know what the lab substitutes.
-            if (str_contains($string, $pattern)) {
-                return true;
+            // An answer with ##token## placeholders holds values that the lab replaces per
+            // gamespace, so a preview cannot know the value the real grading will expect. Stand in
+            // for it: each placeholder accepts any non-blank text, and the literal text around it
+            // has to be there. A response with nothing where the value goes is then rejected, as
+            // it would be in the lab. An answer made only of placeholders accepts every non-blank
+            // response: nobody previewing can know what the lab substitutes. Like the lab, drop
+            // the spaces from the answer and the response. matchAlpha and match compare the first
+            // alternative against the whole response, matchAny any alternative against the whole
+            // response, and matchAll needs every alternative among the response. This checks
+            // the shape only: matchAll does not look for word boundaries, as the values are
+            // unknown. MatchAlpha drops punctuation and match reads '*' as a wildcard, as they
+            // do below. An answer without placeholders is graded like any other, below.
+            $placeholder = '(?:##[a-zA-Z0-9_]*##)+';
+            // The alternatives the lab would use: matchAlpha and match only look at the first.
+            $alternatives = self::answer_alternatives($pattern);
+            if ($matchtype == '0' || $matchtype == '3') {
+                $alternatives = array_slice($alternatives, 0, 1);
+            }
+            $alternatives = array_filter($alternatives, 'strlen');
+            $hasplaceholder = false;
+            foreach ($alternatives as $alternative) {
+                $hasplaceholder = $hasplaceholder || preg_match('/' . $placeholder . '/', $alternative);
+            }
+            if ($hasplaceholder) {
+                // The lab trims the response before grading it.
+                $given = str_replace(' ', '', trim($string));
+                $whole = $matchtype != '1';
+                $literal = function ($part) use ($matchtype) {
+                    if ($matchtype == '0') {
+                        // MatchAlpha ignores everything but letters and digits, in the answer and the response.
+                        $chars = str_split(preg_replace('/[^A-Za-z0-9]/', '', $part));
+                        return '[^A-Za-z0-9]*' . implode('[^A-Za-z0-9]*', $chars) . '[^A-Za-z0-9]*';
+                    }
+                    if ($matchtype == '3') {
+                        // Non-escaped runs of asterisks are wildcards, '\*' is a literal asterisk.
+                        $bits = preg_split('/(?<!\\\\)\*+/', $part);
+                        return implode('.*', array_map(function ($bit) {
+                            return preg_quote(str_replace('\\*', '*', $bit), '/');
+                        }, $bits));
+                    }
+                    return preg_quote($part, '/');
+                };
+                foreach ($alternatives as $alternative) {
+                    $parts = preg_split('/' . $placeholder . '/', $alternative);
+                    $regexp = implode('\s*\S.*', array_map($literal, $parts));
+                    $regexp = '/' . ($whole ? '^' . $regexp . '\z' : $regexp) . '/su' . ($ignorecase ? 'i' : '');
+                    $found = preg_match($regexp, $given) === 1;
+                    if ($found && $matchtype != '1') {
+                        return true;
+                    }
+                    if (!$found && $matchtype == '1') {
+                        return false;
+                    }
+                }
+                // MatchAll needed every alternative and found them all, unless there were none.
+                // Anything else is final: falling through would grade the answer with its
+                // placeholders still in it, and could accept a response with no value.
+                return $matchtype == '1' && $alternatives;
             }
         } else if ($viewattempt == 1) {
             // echo "how can compare during view attempt<br>";
