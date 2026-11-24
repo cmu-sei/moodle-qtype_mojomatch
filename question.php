@@ -358,20 +358,25 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
             if ($hasplaceholder) {
                 // The lab trims the response before grading it.
                 $given = str_replace(' ', '', trim($string));
-                if ($matchtype == '0') {
-                    $given = preg_replace('/[^A-Za-z0-9]/', '', $given);
-                }
                 $whole = $matchtype != '1';
+                $literal = function ($part) use ($matchtype) {
+                    if ($matchtype == '0') {
+                        // MatchAlpha ignores everything but letters and digits, in the answer and the response.
+                        $chars = str_split(preg_replace('/[^A-Za-z0-9]/', '', $part));
+                        return '[^A-Za-z0-9]*' . implode('[^A-Za-z0-9]*', $chars) . '[^A-Za-z0-9]*';
+                    }
+                    if ($matchtype == '3') {
+                        // Non-escaped runs of asterisks are wildcards, '\*' is a literal asterisk.
+                        $bits = preg_split('/(?<!\\\\)\*+/', $part);
+                        return implode('.*', array_map(function ($bit) {
+                            return preg_quote(str_replace('\\*', '*', $bit), '/');
+                        }, $bits));
+                    }
+                    return preg_quote($part, '/');
+                };
                 foreach ($alternatives as $alternative) {
                     $parts = preg_split('/' . $placeholder . '/', $alternative);
-                    $regexp = implode('\s*\S.*', array_map(function ($part) use ($matchtype) {
-                        if ($matchtype == '0') {
-                            $part = preg_replace('/[^A-Za-z0-9]/', '', $part);
-                        }
-                        $part = preg_quote($part, '/');
-                        // The '*' wildcard of matchtype 3.
-                        return $matchtype == '3' ? str_replace('\*', '.*', $part) : $part;
-                    }, $parts));
+                    $regexp = implode('\s*\S.*', array_map($literal, $parts));
                     $regexp = '/' . ($whole ? '^' . $regexp . '\z' : $regexp) . '/su' . ($ignorecase ? 'i' : '');
                     $found = preg_match($regexp, $given) === 1;
                     if ($found && $matchtype != '1') {

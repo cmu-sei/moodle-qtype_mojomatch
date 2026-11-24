@@ -365,6 +365,17 @@ final class question_test extends \advanced_testcase {
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('pong 10.0.0.5', 'ping-##host##', true, '0', 1, 0, 1);
         $this->assertFalse((bool)$matched);
 
+        // MatchAlpha accepts a response that is only punctuation or non-ASCII for a value-only answer, and an
+        // escaped asterisk stays a literal one.
+        foreach (['!', 'é'] as $response) {
+            $matched = qtype_mojomatch_question::compare_string_with_matchtype($response, '##v##', true, '0', 1, 0, 1);
+            $this->assertTrue((bool)$matched, $response);
+        }
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('a*1', 'a\\*##v##', true, '3', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('a\\x1', 'a\\*##v##', true, '3', 1, 0, 1);
+        $this->assertFalse((bool)$matched);
+
         // A placeholder in an alternative the lab ignores does not change how the first one is graded.
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('cp', 'c-p|##v##', true, '0', 1, 0, 1);
         $this->assertTrue((bool)$matched);
