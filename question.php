@@ -332,21 +332,28 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
         $string = self::safe_normalize($string);
         // phpcs:disable Generic.CodeAnalysis.EmptyStatement.DetectedIf
         if ($transforms && $preview) {
-            // The answer holds ##token## placeholders that the lab replaces with a value per
+            // An answer with ##token## placeholders holds values that the lab replaces per
             // gamespace, so a preview cannot know the value the real grading will expect. Stand in
             // for it: each placeholder accepts any non-empty text, and the literal text around it
             // has to be there, whatever the matchtype. A response with nothing where the value
-            // goes is then rejected, as it would be in the lab. Replacing the response with the
-            // answer here, as this used to, only passed because every comparison below then
-            // compared the answer with itself.
-            $parts = preg_split('/##[a-zA-Z0-9]*##/', $pattern);
-            $regexp = '/' . implode('.+', array_map(function ($part) {
-                return preg_quote($part, '/');
-            }, $parts)) . '/su' . ($ignorecase ? 'i' : '');
-            // An answer made only of placeholders becomes '.+', so every non-blank response
-            // matches. That is intended: nobody previewing can know what the lab substitutes.
-            if (preg_match($regexp, $string)) {
-                return true;
+            // goes is then rejected, as it would be in the lab. An answer made only of
+            // placeholders becomes '.+', so every non-blank response matches: nobody previewing
+            // can know what the lab substitutes. The answer's '|' alternatives are tried in turn.
+            // An answer without placeholders is graded like any other, below.
+            $placeholder = '(?:##[a-zA-Z0-9]*##)+';
+            if (preg_match('/' . $placeholder . '/', $pattern)) {
+                foreach (explode('|', $pattern) as $alternative) {
+                    $parts = preg_split('/' . $placeholder . '/', $alternative);
+                    $regexp = '/' . implode('.+', array_map(function ($part) {
+                        return preg_quote($part, '/');
+                    }, $parts)) . '/su' . ($ignorecase ? 'i' : '');
+                    if (preg_match($regexp, $string) === 1) {
+                        return true;
+                    }
+                }
+                // Final: falling through would grade the answer with its placeholders still in
+                // it, and could accept a response with no value.
+                return false;
             }
         } else if ($viewattempt == 1) {
             // echo "how can compare during view attempt<br>";

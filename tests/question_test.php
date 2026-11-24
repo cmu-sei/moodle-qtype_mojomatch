@@ -277,6 +277,45 @@ final class question_test extends \advanced_testcase {
             $this->assertSame($expected, (bool)$matched, "'{$response}'");
         }
 
+        // A response that lacks the value is rejected whatever the matchtype: nothing falls through
+        // to the matchtype comparison, which would drop the punctuation and accept 'pinghost'.
+        foreach (['0', '1', '2', '3'] as $matchtype) {
+            $matched = qtype_mojomatch_question::compare_string_with_matchtype(
+                'pinghost',
+                'ping ##host##',
+                true,
+                $matchtype,
+                1,
+                0,
+                1
+            );
+            $this->assertFalse((bool)$matched, "matchtype {$matchtype}");
+        }
+
+        // Neighbouring placeholders are one value; regex characters in the answer are literal; the
+        // value may span lines; case folding covers non-ASCII letters.
+        $cases = [
+            ['x', '##a####b##', true],
+            ['a.c 1', 'a.c ##v##', true],
+            ['abc 1', 'a.c ##v##', false],
+            ["x a\nb end", 'x ##v## end', true],
+            ['ÉCOLE 1', 'école ##v##', true],
+            ['b 2', 'a ##v##|b ##v##', true],
+            ['c 2', 'a ##v##|b ##v##', false],
+        ];
+        foreach ($cases as [$response, $answer, $expected]) {
+            $matched = qtype_mojomatch_question::compare_string_with_matchtype($response, $answer, true, '3', 1, 0, 1);
+            $this->assertSame($expected, (bool)$matched, "'{$response}' against '{$answer}'");
+        }
+
+        // An answer without placeholders is graded as usual, '|' alternatives included.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('b', 'a|b', true, '3', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
+
+        // A finished attempt being viewed is graded literally, not as a preview.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('ping 10.0.0.5', 'ping ##host##', true, '3', 0, 1, 1);
+        $this->assertFalse((bool)$matched);
+
         // Case counts when the question says it does.
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('PING 10.0.0.5', 'ping ##host##', false, '3', 1, 0, 1);
         $this->assertFalse((bool)$matched);
