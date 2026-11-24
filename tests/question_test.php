@@ -331,6 +331,18 @@ final class question_test extends \advanced_testcase {
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('well ping 1 now', 'ping ##v##', true, '1', 1, 0, 1);
         $this->assertTrue((bool)$matched);
 
+        // matchAll needs every alternative: one of two is not enough, both are.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('a 1', 'a ##v##|b ##w##', true, '1', 1, 0, 1);
+        $this->assertFalse((bool)$matched);
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('a 1 b 2', 'a ##v##|b ##w##', true, '1', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
+
+        // A value may start with a tab or a newline as long as it holds something.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype("ping\tx", 'ping ##v##', true, '3', 1, 0, 1);
+        $this->assertTrue((bool)$matched);
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype("ping\t", 'ping ##v##', true, '3', 1, 0, 1);
+        $this->assertFalse((bool)$matched);
+
         // An answer without placeholders is graded as usual, '|' alternatives included (matchAny).
         $matched = qtype_mojomatch_question::compare_string_with_matchtype('b', 'a|b', true, '2', 1, 0, 1);
         $this->assertTrue((bool)$matched);

@@ -340,7 +340,7 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
             // response: nobody previewing can know what the lab substitutes. Like the lab, drop
             // the spaces from the answer and the response. matchAlpha and match compare the first
             // alternative against the whole response, matchAny any alternative against the whole
-            // response, and matchAll looks for each alternative among the response. This checks
+            // response, and matchAll needs every alternative among the response. This checks
             // the shape only: matchAlpha's dropping of punctuation and match's '*' wildcard are
             // left to the lab. An answer without placeholders is graded like any other, below.
             $placeholder = '(?:##[a-zA-Z0-9_]*##)+';
@@ -353,13 +353,21 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
                 $whole = $matchtype != '1';
                 foreach ($alternatives as $alternative) {
                     $parts = preg_split('/' . $placeholder . '/', $alternative);
-                    $regexp = implode('\S.*', array_map(function ($part) {
+                    $regexp = implode('\s*\S.*', array_map(function ($part) {
                         return preg_quote($part, '/');
                     }, $parts));
                     $regexp = '/' . ($whole ? '^' . $regexp . '\z' : $regexp) . '/su' . ($ignorecase ? 'i' : '');
-                    if (preg_match($regexp, $given) === 1) {
+                    $found = preg_match($regexp, $given) === 1;
+                    if ($found && $matchtype != '1') {
                         return true;
                     }
+                    if (!$found && $matchtype == '1') {
+                        return false;
+                    }
+                }
+                // matchAll needed every alternative and found them all, unless there were none.
+                if ($matchtype == '1' && $alternatives) {
+                    return true;
                 }
                 // Final: falling through would grade the answer with its placeholders still in
                 // it, and could accept a response with no value.
