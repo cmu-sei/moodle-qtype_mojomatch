@@ -229,9 +229,9 @@ final class question_test extends \advanced_testcase {
         $response = 'what is the ##hostname## address';
         $answer = 'the ##host## address';
 
-        // In preview, ##token## placeholders are stripped from both sides, and a response that
-        // carries what is left of the answer is accepted whatever the matchtype: only the lab
-        // can substitute the placeholders, so there is nothing to grade properly here.
+        // In preview each ##token## placeholder accepts any non-empty text, and a response that
+        // carries the rest of the answer around it is accepted whatever the matchtype: only the
+        // lab knows the value, so the preview can only check the shape of the answer.
         foreach (['0', '1', '2', '3'] as $matchtype) {
             $matched = qtype_mojomatch_question::compare_string_with_matchtype(
                 $response,
@@ -253,9 +253,37 @@ final class question_test extends \advanced_testcase {
         $this->assertFalse((bool)$matched);
     }
 
+    public function test_compare_string_with_matchtype_placeholder_needs_a_value_in_preview(): void {
+        // The lab replaces the placeholder with a value, so a response with nothing in its place is
+        // wrong there, and in preview. The literal text around it still has to match.
+        $cases = [
+            ['ping 10.0.0.5', true],
+            ['ping ##host##', true],
+            ['PING 10.0.0.5', true],
+            ['ping', false],
+            ['ping ', false],
+            ['pong 10.0.0.5', false],
+        ];
+        foreach ($cases as [$response, $expected]) {
+            $matched = qtype_mojomatch_question::compare_string_with_matchtype(
+                $response,
+                'ping ##host##',
+                true,
+                '3',
+                1,
+                0,
+                1
+            );
+            $this->assertSame($expected, (bool)$matched, "'{$response}'");
+        }
+
+        // Case counts when the question says it does.
+        $matched = qtype_mojomatch_question::compare_string_with_matchtype('PING 10.0.0.5', 'ping ##host##', false, '3', 1, 0, 1);
+        $this->assertFalse((bool)$matched);
+    }
+
     public function test_compare_string_with_matchtype_placeholder_only_answer_in_preview(): void {
-        // An answer made only of placeholders is left empty once they are stripped, and every
-        // response contains an empty string. That is on purpose: only the lab knows what the
+        // An answer made only of placeholders accepts any non-blank response. That is on purpose: only the lab knows what the
         // placeholders stand for, so a teacher previewing the question cannot be expected to type
         // the real value, and any response shows the question in its answered state. The matchtype
         // does not matter in preview, so each one is tried to show the shortcut applies to all. An

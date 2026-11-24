@@ -332,17 +332,20 @@ class qtype_mojomatch_question extends question_graded_by_strategy implements qu
         $string = self::safe_normalize($string);
         // phpcs:disable Generic.CodeAnalysis.EmptyStatement.DetectedIf
         if ($transforms && $preview) {
-            // The answer holds ##token## placeholders that only the lab substitutes, so a
-            // preview cannot grade it properly. Accept a response that carries what is left of
-            // the answer once the placeholders are dropped, whatever the matchtype: replacing
-            // the response with the answer here, as this used to, only happened to pass because
-            // every comparison below then compared the answer with itself.
-            $regexp = "/##[a-zA-Z0-9]*##/";
-            $string = preg_replace($regexp, '', $string);
-            $pattern = preg_replace($regexp, '', $pattern);
-            // An answer made only of placeholders is empty here, so every response matches. That
-            // is intended: nobody previewing can know what the lab substitutes.
-            if (str_contains($string, $pattern)) {
+            // The answer holds ##token## placeholders that the lab replaces with a value per
+            // gamespace, so a preview cannot know the value the real grading will expect. Stand in
+            // for it: each placeholder accepts any non-empty text, and the literal text around it
+            // has to be there, whatever the matchtype. A response with nothing where the value
+            // goes is then rejected, as it would be in the lab. Replacing the response with the
+            // answer here, as this used to, only passed because every comparison below then
+            // compared the answer with itself.
+            $parts = preg_split('/##[a-zA-Z0-9]*##/', $pattern);
+            $regexp = '/' . implode('.+', array_map(function ($part) {
+                return preg_quote($part, '/');
+            }, $parts)) . '/su' . ($ignorecase ? 'i' : '');
+            // An answer made only of placeholders becomes '.+', so every non-blank response
+            // matches. That is intended: nobody previewing can know what the lab substitutes.
+            if (preg_match($regexp, $string)) {
                 return true;
             }
         } else if ($viewattempt == 1) {
